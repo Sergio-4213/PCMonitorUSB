@@ -1,0 +1,15 @@
+.tools/
+.publish*/
+Windows/**/bin/
+Windows/**/obj/
+Android/.gradle/
+Android/local.properties
+Android/app/build/
+Release/
+Release-v*/
+TestResults/
+logs/
+config.json
+*.zip
+*.user
+*.suo

@@ -1,0 +1,36 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.pcmonitorusb'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.pcmonitorusb'
+        minSdk 21
+        targetSdk 34
+        versionCode 5
+        versionName '2.0.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lint {
+        // API 34 is deliberate; minSdk 21 keeps ADB reverse compatibility broad,
+        // while the primary validation device remains Android 8.1.
+        // AGP 8.2.2 is officially validated through compileSdk 34.
+        disable 'OldTargetApi'
+    }
+}
