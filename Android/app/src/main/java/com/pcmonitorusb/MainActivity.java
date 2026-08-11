@@ -49,6 +49,7 @@ public final class MainActivity extends Activity {
     private volatile long lastSuccess;
     private boolean controlMode;
     private boolean protectionEnabled;
+    private String appliedLanguage = "";
     private View root;
     private View monitorContent;
     private View controlPanel;
@@ -113,7 +114,10 @@ public final class MainActivity extends Activity {
                 ui.post(() -> {
                     if (destroyed) return;
                     showConnected();
-                    if (updatedConfig != null) applyPanelConfig(updatedConfig);
+                    if (updatedConfig != null) {
+                        if (applyServerLanguage(updatedConfig.language)) bindLayout();
+                        else applyPanelConfig(updatedConfig);
+                    }
                     renderStats(stats);
                 });
             } catch (Exception ignored) {
@@ -348,11 +352,11 @@ public final class MainActivity extends Activity {
         buttonGrid.addView(spacer);
     }
 
-    private static List<PanelConfig.PanelButton> defaultButtons() {
+    private List<PanelConfig.PanelButton> defaultButtons() {
         List<PanelConfig.PanelButton> list = new ArrayList<>(7);
-        list.add(new PanelConfig.PanelButton("media_previous", "ANTERIOR", true));
+        list.add(new PanelConfig.PanelButton("media_previous", getString(R.string.previous), true));
         list.add(new PanelConfig.PanelButton("media_play_pause", "PLAY/PAUSE", true));
-        list.add(new PanelConfig.PanelButton("media_next", "PRÓXIMA", true));
+        list.add(new PanelConfig.PanelButton("media_next", getString(R.string.next), true));
         list.add(new PanelConfig.PanelButton("mute", "MUTE", true));
         list.add(new PanelConfig.PanelButton("volume_down", "VOL -", true));
         list.add(new PanelConfig.PanelButton("volume_up", "VOL +", true));
@@ -379,7 +383,7 @@ public final class MainActivity extends Activity {
         ui.postDelayed(() -> button.setAlpha(button.isEnabled() ? 1f : 0.35f), 160);
         worker.execute(() -> {
             boolean ok = api.sendCommand(command);
-            if (!ok) ui.post(() -> showTemporaryMessage("Falha ao executar comando"));
+            if (!ok) ui.post(() -> showTemporaryMessage(getString(R.string.command_failed)));
         });
     }
 
@@ -408,8 +412,8 @@ public final class MainActivity extends Activity {
         setText(vramValue, formatPair(stats.gpu.vramUsed, stats.gpu.vramTotal));
         setText(downloadValue, "↓ " + format(stats.network.download, "%.2f MB/s"));
         setText(uploadValue, "↑ " + format(stats.network.upload, "%.2f MB/s"));
-        setText(diskActivity, "DISCO " + format(stats.disk.activity, "%.0f%%"));
-        setText(diskUsage, "USO " + format(stats.disk.mainUsage, "%.0f%%"));
+        setText(diskActivity, getString(R.string.disk_format, format(stats.disk.activity, "%.0f%%")));
+        setText(diskUsage, getString(R.string.usage_format, format(stats.disk.mainUsage, "%.0f%%")));
         setText(fpsValue, format(stats.fps, "%.0f"));
         setText(controlCpuValue, format(stats.cpu.temperature, "%.0f°C") + "  •  " + format(stats.cpu.usage, "%.0f%%"));
         setText(controlGpuValue, format(stats.gpu.temperature, "%.0f°C") + "  •  " + format(stats.gpu.usage, "%.0f%%"));
@@ -427,15 +431,15 @@ public final class MainActivity extends Activity {
         connectionStatus.setTextColor(COLOR_NORMAL);
         sensorArea.setAlpha(1f);
         controlPanel.setAlpha(1f);
-        if ("CONEXÃO PERDIDA".contentEquals(message.getText())) setText(message, "");
+        if (getString(R.string.connection_lost).contentEquals(message.getText())) setText(message, "");
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     private void showDisconnected() {
         if (destroyed || connectionStatus == null) return;
-        setText(connectionStatus, "● DESCONECTADO");
+        setText(connectionStatus, getString(R.string.disconnected));
         connectionStatus.setTextColor(COLOR_CRITICAL);
-        setText(message, "CONEXÃO PERDIDA");
+        setText(message, getString(R.string.connection_lost));
         sensorArea.setAlpha(0.42f);
         controlPanel.setAlpha(0.42f);
         clearValues();
@@ -448,7 +452,7 @@ public final class MainActivity extends Activity {
         setText(gpuTemp, "--°C"); setText(gpuUsage, "--%"); setText(gpuHotspot, "HOTSPOT --°C");
         setText(gpuClock, "CORE -- MHz"); setText(gpuVramClock, "VRAM -- MHz"); setText(gpuPower, "-- W"); setText(gpuFan, "FAN -- RPM / --%");
         setText(ramValue, "-- / -- GB"); setText(ramUsage, "--%"); setText(vramValue, "-- / -- GB");
-        setText(downloadValue, "↓ -- MB/s"); setText(uploadValue, "↑ -- MB/s"); setText(diskActivity, "DISCO --%"); setText(diskUsage, "USO --%"); setText(fpsValue, "--");
+        setText(downloadValue, "↓ -- MB/s"); setText(uploadValue, "↑ -- MB/s"); setText(diskActivity, getString(R.string.disk_value)); setText(diskUsage, getString(R.string.usage_value)); setText(fpsValue, "--");
         setText(controlCpuValue, "--°C  •  --%"); setText(controlGpuValue, "--°C  •  --%");
         setText(controlCpuDetails, "-- GHz  •  -- W"); setText(controlGpuDetails, "-- MHz  •  -- W");
         setText(controlRamValue, "RAM  -- / -- GB"); setText(controlVramValue, "VRAM  -- / -- GB");
@@ -461,10 +465,10 @@ public final class MainActivity extends Activity {
 
     private void showMenu(View anchor) {
         PopupMenu popup = new PopupMenu(this, anchor);
-        popup.getMenu().add(0, 1, 0, "Brilho normal");
-        popup.getMenu().add(0, 2, 1, "Brilho baixo");
-        popup.getMenu().add(0, 3, 2, "Brilho mínimo");
-        popup.getMenu().add(0, 4, 3, protectionEnabled ? "Desativar modo proteção" : "Ativar modo proteção");
+        popup.getMenu().add(0, 1, 0, getString(R.string.brightness_normal));
+        popup.getMenu().add(0, 2, 1, getString(R.string.brightness_low));
+        popup.getMenu().add(0, 3, 2, getString(R.string.brightness_minimum));
+        popup.getMenu().add(0, 4, 3, protectionEnabled ? getString(R.string.disable_protection) : getString(R.string.enable_protection));
         popup.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == 1) setActivityBrightness(1f);
             else if (item.getItemId() == 2) setActivityBrightness(0.28f);
@@ -472,7 +476,7 @@ public final class MainActivity extends Activity {
             else if (item.getItemId() == 4) {
                 protectionEnabled = !protectionEnabled;
                 if (!protectionEnabled) { root.setTranslationX(0); root.setTranslationY(0); }
-                showTemporaryMessage(protectionEnabled ? "Modo proteção ativado" : "Modo proteção desativado");
+                showTemporaryMessage(getString(protectionEnabled ? R.string.protection_enabled : R.string.protection_disabled));
             }
             return true;
         });
@@ -483,6 +487,17 @@ public final class MainActivity extends Activity {
         WindowManager.LayoutParams params = getWindow().getAttributes();
         params.screenBrightness = value;
         getWindow().setAttributes(params);
+    }
+
+    @SuppressWarnings("deprecation")
+    private boolean applyServerLanguage(String code) {
+        if (!("pt".equals(code) || "en".equals(code)) || code.equals(appliedLanguage)) return false;
+        Locale locale = new Locale(code);
+        Configuration configuration = new Configuration(getResources().getConfiguration());
+        configuration.setLocale(locale);
+        getResources().updateConfiguration(configuration, getResources().getDisplayMetrics());
+        appliedLanguage = code;
+        return true;
     }
 
     private void enterImmersiveMode() {

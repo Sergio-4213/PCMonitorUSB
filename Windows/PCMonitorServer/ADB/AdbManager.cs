@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using PCMonitorUSB.Commands;
 using PCMonitorUSB.Config;
+using static PCMonitorUSB.Localization.AppLanguage;
 using PCMonitorUSB.Server;
 
 namespace PCMonitorUSB.ADB;
@@ -75,7 +76,7 @@ public sealed class AdbManager : IAsyncDisposable
             catch (OperationCanceledException) { break; }
             catch (Exception ex)
             {
-                SetStatus(new AdbStatus(AdbConnectionState.Error, "Falha ao consultar o ADB."));
+                SetStatus(new AdbStatus(AdbConnectionState.Error, T("Falha ao consultar o ADB.", "Failed to query ADB.")));
                 SimpleLog.Error("Falha no monitor ADB.", ex);
             }
 
@@ -89,14 +90,14 @@ public sealed class AdbManager : IAsyncDisposable
         if (!File.Exists(_adbPath))
         {
             _preparedSerial = null;
-            SetStatus(new AdbStatus(AdbConnectionState.AdbMissing, "Componentes ADB ainda não foram baixados."));
+            SetStatus(new AdbStatus(AdbConnectionState.AdbMissing, T("Os componentes ADB ainda não foram baixados.", "ADB components have not been downloaded yet.")));
             return;
         }
 
         var result = await RunAdbAsync(["devices", "-l"], cancellationToken).ConfigureAwait(false);
         if (!result.Success)
         {
-            SetStatus(new AdbStatus(AdbConnectionState.Error, "ADB não respondeu corretamente."));
+            SetStatus(new AdbStatus(AdbConnectionState.Error, T("O ADB não respondeu corretamente.", "ADB did not respond correctly.")));
             return;
         }
 
@@ -104,7 +105,7 @@ public sealed class AdbManager : IAsyncDisposable
         if (devices.Count == 0)
         {
             _preparedSerial = null;
-            SetStatus(new AdbStatus(AdbConnectionState.NoDevice, "Nenhum dispositivo Android encontrado."));
+            SetStatus(new AdbStatus(AdbConnectionState.NoDevice, T("Nenhum dispositivo Android encontrado.", "No Android device was found.")));
             return;
         }
 
@@ -116,10 +117,10 @@ public sealed class AdbManager : IAsyncDisposable
             if (unauthorized is not null)
             {
                 SetStatus(new AdbStatus(AdbConnectionState.Unauthorized,
-                    "Desbloqueie o Android e aceite a autorização de depuração USB.", unauthorized.Serial, unauthorized.Model));
+                    T("Desbloqueie o Android e aceite a autorização de depuração USB.", "Unlock the Android device and accept USB debugging authorization."), unauthorized.Serial, unauthorized.Model));
                 return;
             }
-            SetStatus(new AdbStatus(AdbConnectionState.Offline, "Dispositivo ADB offline. Reconecte o cabo USB."));
+            SetStatus(new AdbStatus(AdbConnectionState.Offline, T("Dispositivo ADB offline. Reconecte o cabo USB.", "ADB device is offline. Reconnect the USB cable.")));
             return;
         }
 
@@ -167,15 +168,15 @@ public sealed class AdbManager : IAsyncDisposable
             if (unauthorizedUsb is not null)
             {
                 SetStatus(new AdbStatus(AdbConnectionState.Unauthorized,
-                    "Desbloqueie o Android e aceite a autorização de depuração USB.", unauthorizedUsb.Serial, unauthorizedUsb.Model));
+                    T("Desbloqueie o Android e aceite a autorização de depuração USB.", "Unlock the Android device and accept USB debugging authorization."), unauthorizedUsb.Serial, unauthorizedUsb.Model));
                 return;
             }
             var first = online[0];
             var reason = foundNetworkDevice && !foundUnsupportedAndroid
-                ? "Somente dispositivos Android conectados por USB são aceitos; ADB por rede foi ignorado."
+                ? T("Somente dispositivos Android conectados por USB são aceitos; o ADB por rede foi ignorado.", "Only Android devices connected by USB are accepted; network ADB was ignored.")
                 : foundUnsupportedAndroid
-                    ? $"O Android conectado é antigo demais. É necessário Android 5.0 / API {MinimumAndroidApi} ou superior."
-                    : "Android conectado, mas bloqueado pela restrição opcional de modelos.";
+                    ? T($"O Android conectado é antigo demais. É necessário Android 5.0 / API {MinimumAndroidApi} ou superior.", $"The connected Android version is too old. Android 5.0 / API {MinimumAndroidApi} or later is required.")
+                    : T("Android conectado, mas bloqueado pela restrição opcional de modelos.", "Android connected, but blocked by the optional model restriction.");
             SetStatus(new AdbStatus(AdbConnectionState.Incompatible,
                 reason, first.Serial, NormalizeModel(first.Model)));
             return;
@@ -196,7 +197,7 @@ public sealed class AdbManager : IAsyncDisposable
         if (!reverse.Success)
         {
             _preparedSerial = null;
-            SetStatus(new AdbStatus(AdbConnectionState.ReverseFailed, "Não foi possível configurar o canal USB.", device.Serial, device.Model));
+            SetStatus(new AdbStatus(AdbConnectionState.ReverseFailed, T("Não foi possível configurar o canal USB.", "Could not configure the USB channel."), device.Serial, device.Model));
             SimpleLog.Warn($"adb reverse falhou: {TrimForLog(reverse.Output)}");
             return;
         }
@@ -212,7 +213,7 @@ public sealed class AdbManager : IAsyncDisposable
                     _preparedSerial = device.Serial;
                     _nextRepair = DateTimeOffset.UtcNow.AddSeconds(10);
                     SetStatus(new AdbStatus(AdbConnectionState.AppMissing,
-                        "Android conectado, mas a instalação automática do APK falhou. Use 'Instalar/atualizar APK'.", device.Serial, device.Model));
+                        T("Android conectado, mas a instalação automática do APK falhou. Use 'Instalar/atualizar APK'.", "Android connected, but automatic APK installation failed. Use 'Install/update APK'."), device.Serial, device.Model));
                     SimpleLog.Warn($"Instalação automática do APK falhou: {TrimForLog(install.Output)}");
                     return;
                 }
@@ -222,7 +223,7 @@ public sealed class AdbManager : IAsyncDisposable
             {
                 _preparedSerial = device.Serial;
                 _nextRepair = DateTimeOffset.UtcNow.AddSeconds(10);
-                SetStatus(new AdbStatus(AdbConnectionState.AppMissing, "Android conectado; instale o APK para iniciar o painel.", device.Serial, device.Model));
+                SetStatus(new AdbStatus(AdbConnectionState.AppMissing, T("Android conectado; instale o APK para iniciar o painel.", "Android connected; install the APK to start the panel."), device.Serial, device.Model));
                 return;
             }
         }
@@ -232,7 +233,7 @@ public sealed class AdbManager : IAsyncDisposable
         {
             _preparedSerial = device.Serial;
             _nextRepair = DateTimeOffset.UtcNow.AddSeconds(10);
-            SetStatus(new AdbStatus(AdbConnectionState.AppMissing, "Android conectado; instale o APK para iniciar o painel.", device.Serial, device.Model));
+            SetStatus(new AdbStatus(AdbConnectionState.AppMissing, T("Android conectado; instale o APK para iniciar o painel.", "Android connected; install the APK to start the panel."), device.Serial, device.Model));
             return;
         }
 
@@ -243,7 +244,7 @@ public sealed class AdbManager : IAsyncDisposable
 
         if (!start.Success)
         {
-            SetStatus(new AdbStatus(AdbConnectionState.Error, "Canal USB criado, mas o APK não pôde ser iniciado.", device.Serial, device.Model));
+            SetStatus(new AdbStatus(AdbConnectionState.Error, T("Canal USB criado, mas o APK não pôde ser iniciado.", "USB channel created, but the APK could not be started."), device.Serial, device.Model));
             SimpleLog.Warn($"Falha ao iniciar APK: {TrimForLog(start.Output)}");
             return;
         }
@@ -260,19 +261,19 @@ public sealed class AdbManager : IAsyncDisposable
     private void SetConnectedStatus(AdbDevice device)
     {
         var message = _server.Connection.IsPanelConnected
-            ? "Android conectado; painel comunicando por USB."
-            : "Canal USB pronto; aguardando resposta do painel.";
+            ? T("Android conectado; painel comunicando por USB.", "Android connected; panel communicating over USB.")
+            : T("Canal USB pronto; aguardando resposta do painel.", "USB channel ready; waiting for the panel to respond.");
         SetStatus(new AdbStatus(AdbConnectionState.Connected, message, device.Serial, device.Model));
     }
 
     public async Task<CommandResult> InstallApkAsync(string apkPath, CancellationToken cancellationToken = default)
     {
-        if (!File.Exists(apkPath)) return new CommandResult(false, "Arquivo APK não encontrado ao lado do servidor.");
+        if (!File.Exists(apkPath)) return new CommandResult(false, T("O arquivo APK não foi encontrado ao lado do servidor.", "The APK file was not found next to the server."));
         var serial = _status.Serial;
-        if (string.IsNullOrWhiteSpace(serial)) return new CommandResult(false, "Conecte e autorize o dispositivo Android primeiro.");
+        if (string.IsNullOrWhiteSpace(serial)) return new CommandResult(false, T("Conecte e autorize o dispositivo Android primeiro.", "Connect and authorize the Android device first."));
         var result = await RunAdbAsync(["-s", serial, "install", "-r", apkPath], cancellationToken).ConfigureAwait(false);
         if (!result.Success || !result.Output.Contains("Success", StringComparison.OrdinalIgnoreCase))
-            return new CommandResult(false, "Falha ao instalar APK: " + TrimForLog(result.Output));
+            return new CommandResult(false, T("Falha ao instalar o APK: ", "Failed to install the APK: ") + TrimForLog(result.Output));
         _preparedSerial = null;
         await RemoveLegacyAndroidAppAsync(serial, cancellationToken).ConfigureAwait(false);
         SimpleLog.Info("APK instalado/atualizado pelo ADB.");

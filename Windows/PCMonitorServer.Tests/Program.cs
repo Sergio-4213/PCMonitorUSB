@@ -8,6 +8,10 @@ using PCMonitorUSB.Config;
 using PCMonitorUSB.Core;
 using PCMonitorUSB.Server;
 using PCMonitorUSB.UI;
+using PCMonitorUSB.Localization;
+using System.Text.Json;
+
+AppLanguage.Configure("pt");
 
 var tests = new List<(string Name, Func<Task> Run)>
 {
@@ -15,6 +19,7 @@ var tests = new List<(string Name, Func<Task> Run)>
     ("Seleção de sensores usa tipo, nome e prioridade", TestSensorSelection),
     ("GPU principal é escolhida sem misturar vídeo integrado e dedicado", TestPrimaryGpuSelection),
     ("Configuração normaliza porta e intervalo", TestConfigNormalization),
+    ("Idioma alterna entre português e inglês", TestLocalization),
     ("Lista de comandos nega comando arbitrário", TestCommandAllowlist),
     ("API local exige token somente para comandos", TestLocalApi),
     ("Janela mantém título e botão Salvar dentro da área visível", TestWindowLayout),
@@ -82,12 +87,13 @@ static Task TestSensorSelection()
 
 static Task TestConfigNormalization()
 {
-    var config = new AppConfig { Port = 1, UpdateIntervalMs = 1300, CpuElevatedTemperature = 85, CpuCriticalTemperature = 80 };
+    var config = new AppConfig { Port = 1, UpdateIntervalMs = 1300, CpuElevatedTemperature = 85, CpuCriticalTemperature = 80, Language = "inválido" };
     config.Normalize();
     Require(config.Port == 1024, "Porta mínima não aplicada.");
     Require(config.UpdateIntervalMs == 1000, "Intervalo não normalizado.");
     Require(config.CpuCriticalTemperature > config.CpuElevatedTemperature, "Limites térmicos inconsistentes.");
     Require(!config.RestrictAndroidModels && config.AutoInstallApk, "Compatibilidade Android ampla não está ativa por padrão.");
+    Require(config.Language == "auto", "Idioma inválido não voltou ao modo automático.");
 
     var legacyRoot = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", Guid.NewGuid().ToString("N"));
     Directory.CreateDirectory(legacyRoot);
@@ -95,6 +101,16 @@ static Task TestConfigNormalization()
     File.WriteAllText(legacyPath, "{\"AllowedModelPrefixes\":[\"SM-J410\"]}");
     var migrated = new ConfigStore(legacyPath).Current;
     Require(!migrated.RestrictAndroidModels, "Configuração antiga continuou bloqueada ao Galaxy J4.");
+    return Task.CompletedTask;
+}
+
+static Task TestLocalization()
+{
+    AppLanguage.Configure("en");
+    Require(AppLanguage.CurrentCode == "en" && AppLanguage.T("Português", "English") == "English", "Idioma inglês não foi aplicado.");
+    Require(AppLanguage.BuiltInButtonLabel("media_next", "fallback") == "NEXT", "Botão interno não foi traduzido para inglês.");
+    AppLanguage.Configure("pt");
+    Require(AppLanguage.CurrentCode == "pt" && AppLanguage.T("Português", "English") == "Português", "Idioma português não foi restaurado.");
     return Task.CompletedTask;
 }
 
@@ -136,6 +152,8 @@ static async Task TestLocalApi()
     Require(stats.StatusCode == HttpStatusCode.OK, "Stats não respondeu 200.");
     var system = await client.GetFromJsonAsync<SystemProfile>("/api/system");
     Require(system?.Cpu == "AMD Ryzen 7 3800XT", "Configuração exata do PC não foi publicada.");
+    var panelConfig = await client.GetFromJsonAsync<JsonElement>("/api/config");
+    Require(panelConfig.GetProperty("language").GetString() == "pt", "A API não publicou o idioma selecionado para o Android.");
     var unauthorized = await client.PostAsJsonAsync("/api/command", new { command = "media_play_pause" });
     Require(unauthorized.StatusCode == HttpStatusCode.Unauthorized, "Comando sem token não foi negado.");
     client.DefaultRequestHeaders.Add("X-PCMonitor-Token", server.ApiToken);
@@ -163,6 +181,7 @@ static Task TestWindowLayout()
     {
         try
         {
+            AppLanguage.Configure("pt");
             Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
             Application.SetDefaultFont(new Font("Segoe UI", 10f));
             var store = NewStore(FindFreePort());
@@ -187,7 +206,7 @@ static Task TestWindowLayout()
             var save = Descendants(form).OfType<Button>().Single(x => x.Text == "Salvar configurações");
             var serverToggle = Descendants(form).OfType<Button>().Single(x => x.Text == "Ligar servidor");
             Require(serverToggle.Enabled, "O botão para ligar o servidor não está disponível quando ele está parado.");
-            var output = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "settings-layout-2.0.2.png");
+            var output = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "settings-layout-2.1.0.png");
             Directory.CreateDirectory(Path.GetDirectoryName(output)!);
             using var bitmap = new Bitmap(form.ClientSize.Width, form.ClientSize.Height);
             form.DrawToBitmap(bitmap, form.ClientRectangle);
@@ -202,7 +221,7 @@ static Task TestWindowLayout()
 
             tabs.SelectedIndex = 0;
             Application.DoEvents();
-            var dashboardOutput = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "dashboard-server-toggle-2.0.2.png");
+            var dashboardOutput = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "dashboard-server-toggle-2.1.0.png");
             using var dashboardBitmap = new Bitmap(form.ClientSize.Width, form.ClientSize.Height);
             form.DrawToBitmap(dashboardBitmap, form.ClientRectangle);
             dashboardBitmap.Save(dashboardOutput);

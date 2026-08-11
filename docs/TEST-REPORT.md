@@ -1,63 +1,54 @@
-# Relatório de testes — PC Monitor USB 2.0.2
+# Test report — PC Monitor USB 2.1.0
 
-Data: 11/08/2026
-Ambiente principal: Windows 11 x64, AMD Ryzen 7 3800XT, MSI B550M PRO-VDH WIFI, AMD Radeon RX 7600, 32 GB RAM e Android 8.1 Go por USB.
+Validated locally on August 11, 2026.
 
-## Resultado automatizado
+## Automated Windows suite
 
-`9/9` testes aprovados:
+Command:
 
-1. parser ADB distingue autorizado, não autorizado e conexão por rede;
-2. seleção de sensores usa tipo, nome, prioridade e identificador;
-3. GPU principal não mistura vídeo integrado e dedicado;
-4. configuração normaliza porta e intervalo;
-5. lista permitida nega comandos arbitrários;
-6. API local publica sensores e configuração do PC e exige token nos comandos;
-7. compatibilidade ADB genérica aceita Android físico por USB;
-8. janela mantém o nome e o botão Salvar totalmente dentro da área visível;
-9. LibreHardwareMonitor coleta no computador real.
+```powershell
+.\.tools\dotnet\dotnet.exe run --project Windows\PCMonitorServer.Tests\PCMonitorServer.Tests.csproj -c Release --no-restore
+```
 
-Compilação Windows: aprovada, zero erros e zero avisos.
-Compilação Android release: aprovada.
-Assinaturas APK v1, v2 e v3: verificadas.
-Instalação do APK 2.0.0 no aparelho real: aprovada.
+Result: **10/10 passed**.
 
-## Leituras reais verificadas
+Covered scenarios:
 
-O servidor elevado publicou, durante o teste:
+- authorized and unauthorized ADB parsing;
+- rejection of network ADB as a physical USB device;
+- sensor selection by hardware/type/name/identifier priority;
+- stable primary-GPU selection without mixing integrated and discrete sensors;
+- configuration normalization, including invalid-language fallback;
+- Portuguese/English localization and built-in button labels;
+- command allowlist rejection;
+- local API, temporary token, system profile, and Android language publication;
+- Windows window bounds, title, Save button, and server toggle;
+- real USB Android detection and communication;
+- real LibreHardwareMonitor enumeration.
 
-- CPU identificada: AMD Ryzen 7 3800XT;
-- temperatura da CPU: 62,6 °C;
-- clock da CPU: 4,33 GHz;
-- potência da CPU: 68,3 W;
-- GPU identificada: AMD Radeon RX 7600;
-- temperatura da GPU: 55 °C;
-- hotspot: 60 °C;
-- clock da GPU: 2093 MHz;
-- VRAM: 2,28 / 7,98 GB;
-- potência da GPU: 50 W;
-- RAM: 14,91 / 31,92 GB.
+Real-machine snapshot during this run:
 
-Esses números são um instantâneo e variam com a carga. Nenhum valor foi inventado.
+- Android: `SM-J410G`, communicating through USB;
+- CPU: `AMD Ryzen 7 3800XT`;
+- GPU: `AMD Radeon RX 7600`;
+- sensors enumerated: 134;
+- GPU temperature: 61 °C at the sampled moment;
+- CPU temperature: not exposed in this run (`--`), while CPU usage was available.
 
-## Revisão funcional 2.0
+The UI test generated screenshots in `%TEMP%\PCMonitorUSBTests` and verified that the title and Save button remained inside the application window.
 
-- Nome e pacotes visíveis migrados para **PC Monitor USB**.
-- Novo ícone sem texto ou referência a modelo de celular aplicado ao EXE e ao APK.
-- Visão geral reduzida a um botão: **Configurar celular**.
-- Comandos iniciar/parar servidor removidos da bandeja.
-- Botão da Visão geral alterna entre **Ligar servidor** e **Desligar servidor**, permanecendo clicável nos dois estados.
-- Cabeçalho ampliado para escalas DPI do Windows e rodapé de configurações fixo, mantendo **Salvar configurações** sempre visível.
-- Celular mostrado somente como conectado ou desconectado; o modelo não aparece na interface.
-- Configuração exata do PC adicionada à visão geral e ao endpoint `/api/system`.
-- Seleção de GPU baseada em identificador físico, capacidade de sensores e desempate determinístico.
-- Minimização continua removendo o aplicativo da barra de tarefas e enviando-o à área de notificação.
-- Migração preserva configuração, logs e Platform-Tools da versão anterior.
-- Aplicativo Android anterior só é removido após validar e iniciar o pacote 2.0.
+## Android build and static checks
 
-## Limites verificados
+Command:
 
-- O teste automatizado executado sem elevação não acessou a temperatura da CPU; o servidor elevado leu corretamente temperatura, clock e potência. Por isso o manifesto mantém solicitação de administrador.
-- Nenhuma reinicialização foi executada.
-- FPS continua `null` por não haver fonte PresentMon integrada.
-- A primeira autorização RSA continua dependendo da confirmação física no Android.
+```powershell
+.\.tools\gradle-8.2.1\bin\gradle.bat -p Android clean lintRelease assembleRelease --no-daemon
+```
+
+Result: **BUILD SUCCESSFUL**.
+
+Checks included English default resources, Brazilian Portuguese resources, portrait layout, landscape layout, Java compilation, R8 optimization, resource shrinking, and release lint.
+
+## Verification limits
+
+Sensor availability depends on the connected PC and installed low-level driver support. CPU temperature was not exposed by LibreHardwareMonitor during this specific run; the Windows UI keeps the value unavailable rather than inventing it and offers the explicit PawnIO support workflow. No reboot was performed.

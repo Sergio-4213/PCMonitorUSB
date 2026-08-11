@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
 using PCMonitorUSB.Config;
+using static PCMonitorUSB.Localization.AppLanguage;
 
 namespace PCMonitorUSB.Commands;
 
@@ -50,7 +51,7 @@ public sealed class CommandService
         catch (Exception ex)
         {
             SimpleLog.Error($"Erro de comando: {commandId}.", ex);
-            return new CommandResult(false, "Falha ao executar comando.");
+            return new CommandResult(false, T("Falha ao executar o comando.", "Command failed."));
         }
     }
 

@@ -4,6 +4,7 @@ using PCMonitorUSB.Config;
 using PCMonitorUSB.Core;
 using PCMonitorUSB.Server;
 using PCMonitorUSB.UI;
+using PCMonitorUSB.Localization;
 using System.Diagnostics;
 
 namespace PCMonitorUSB;
@@ -18,7 +19,9 @@ internal static class Program
         if (IsLegacyInstanceRunning())
         {
             MessageBox.Show(
-                "Feche a versão antiga do monitor que ainda está aberta na bandeja e tente novamente. Nenhuma reinicialização do computador é necessária.",
+                AppLanguage.T(
+                    "Feche a versão antiga do monitor que ainda está aberta na bandeja e tente novamente. Nenhuma reinicialização do computador é necessária.",
+                    "Close the previous monitor version that is still running in the notification area and try again. No computer restart is required."),
                 "PC Monitor USB", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
@@ -30,12 +33,13 @@ internal static class Program
         using var singleInstance = new Mutex(true, "Local\\PCMonitorUSBServer-SingleInstance", out var created);
         if (!created)
         {
-            MessageBox.Show("PC Monitor USB já está em execução na bandeja.", "PC Monitor USB",
+            MessageBox.Show(AppLanguage.T("PC Monitor USB já está em execução na bandeja.", "PC Monitor USB is already running in the notification area."), "PC Monitor USB",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
 
         var config = new ConfigStore(Path.Combine(dataRoot, "config.json"));
+        AppLanguage.Configure(config.Current.Language);
         if (config.Current.StartWithWindows)
         {
             try { MainForm.SetStartup(true); }
@@ -52,7 +56,7 @@ internal static class Program
         catch (Exception ex)
         {
             SimpleLog.Error("Não foi possível iniciar o servidor local.", ex);
-            MessageBox.Show($"Não foi possível abrir a porta local {config.Current.Port}.\n\n{ex.Message}",
+            MessageBox.Show(AppLanguage.T($"Não foi possível abrir a porta local {config.Current.Port}.", $"Could not open local port {config.Current.Port}.") + $"\n\n{ex.Message}",
                 "PC Monitor USB", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 

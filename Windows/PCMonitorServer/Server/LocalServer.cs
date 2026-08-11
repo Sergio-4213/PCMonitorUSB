@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using PCMonitorUSB.Localization;
 
 namespace PCMonitorUSB.Server;
 
@@ -92,7 +93,7 @@ public sealed class LocalServer : IAsyncDisposable
             var config = _config.Current;
             var buttons = config.Buttons
                 .Where(x => x.Enabled)
-                .Select(x => new ApiButton(x.Id, x.Label, x.Icon, _commands.IsAvailable(x)))
+                .Select(x => new ApiButton(x.Id, x.BuiltIn ? AppLanguage.BuiltInButtonLabel(x.Id, x.Label) : x.Label, x.Icon, _commands.IsAvailable(x)))
                 .ToArray();
             return Results.Ok(new PanelConfigResponse(
                 config.UpdateIntervalMs,
@@ -105,7 +106,8 @@ public sealed class LocalServer : IAsyncDisposable
                 config.ShowFps,
                 new TemperatureConfig(config.CpuElevatedTemperature, config.CpuCriticalTemperature,
                     config.GpuElevatedTemperature, config.GpuCriticalTemperature),
-                buttons));
+                buttons,
+                AppLanguage.CurrentCode));
         });
         app.MapGet("/api/ping", (HttpContext context) =>
         {
@@ -119,12 +121,12 @@ public sealed class LocalServer : IAsyncDisposable
             Connection.MarkContact();
             if (context.Request.ContentType is null ||
                 !context.Request.ContentType.StartsWith("application/json", StringComparison.OrdinalIgnoreCase))
-                return Results.BadRequest(new { ok = false, error = "Content-Type inválido." });
+                return Results.BadRequest(new { ok = false, error = AppLanguage.T("Content-Type inválido.", "Invalid Content-Type.") });
 
             var now = Environment.TickCount64;
             var previous = Interlocked.Exchange(ref _lastCommandTick, now);
             if (previous > 0 && now - previous < 75)
-                return Results.Json(new { ok = false, error = "Muitos comandos em sequência." }, statusCode: 429);
+                return Results.Json(new { ok = false, error = AppLanguage.T("Muitos comandos em sequência.", "Too many commands in quick succession.") }, statusCode: 429);
 
             CommandRequest? request;
             try
@@ -133,7 +135,7 @@ public sealed class LocalServer : IAsyncDisposable
             }
             catch (JsonException)
             {
-                return Results.BadRequest(new { ok = false, error = "JSON inválido." });
+                return Results.BadRequest(new { ok = false, error = AppLanguage.T("JSON inválido.", "Invalid JSON.") });
             }
 
             var result = _commands.Execute(request?.Command ?? "");
@@ -171,12 +173,17 @@ public sealed class LocalServer : IAsyncDisposable
 
     public async ValueTask DisposeAsync() => await StopAsync();
 
-    private const string DashboardHtml = """
+    private static string DashboardHtml => AppLanguage.T("""
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>PC Monitor USB</title><style>body{font:16px system-ui;background:#0c0d0f;color:#eee;margin:0;padding:24px}main{max-width:800px;margin:auto}h1{font-size:24px}pre{background:#16181c;border:1px solid #30343b;border-radius:10px;padding:18px;overflow:auto;min-height:300px}.ok{color:#56d889}</style></head>
 <body><main><h1>PC Monitor USB <span class="ok">● ATIVO</span></h1><p>Painel local de diagnóstico. A API escuta somente em 127.0.0.1.</p><pre id="stats">Carregando...</pre></main>
 <script>async function u(){try{let r=await fetch('/api/stats',{cache:'no-store'});document.querySelector('#stats').textContent=JSON.stringify(await r.json(),null,2)}catch(e){document.querySelector('#stats').textContent='Sem resposta do servidor'}}u();setInterval(u,1000)</script></body></html>
-""";
+""", """
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>PC Monitor USB</title><style>body{font:16px system-ui;background:#0c0d0f;color:#eee;margin:0;padding:24px}main{max-width:800px;margin:auto}h1{font-size:24px}pre{background:#16181c;border:1px solid #30343b;border-radius:10px;padding:18px;overflow:auto;min-height:300px}.ok{color:#56d889}</style></head>
+<body><main><h1>PC Monitor USB <span class="ok">● ACTIVE</span></h1><p>Local diagnostics panel. The API listens only on 127.0.0.1.</p><pre id="stats">Loading...</pre></main>
+<script>async function u(){try{let r=await fetch('/api/stats',{cache:'no-store'});document.querySelector('#stats').textContent=JSON.stringify(await r.json(),null,2)}catch(e){document.querySelector('#stats').textContent='No response from server'}}u();setInterval(u,1000)</script></body></html>
+""");
 }
 
 public sealed record CommandRequest(string Command);
@@ -192,4 +199,5 @@ public sealed record PanelConfigResponse(
     bool ShowDisk,
     bool ShowFps,
     TemperatureConfig Temperatures,
-    IReadOnlyList<ApiButton> Buttons);
+    IReadOnlyList<ApiButton> Buttons,
+    string Language);

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class PanelConfig {
+    public String language = "";
     public int updateIntervalMs = 1000;
     public boolean showCpu = true;
     public boolean showGpu = true;

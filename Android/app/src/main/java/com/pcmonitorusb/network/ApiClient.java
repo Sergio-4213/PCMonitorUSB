@@ -79,6 +79,7 @@ public final class ApiClient {
     public PanelConfig fetchConfig() throws IOException, JSONException {
         JSONObject root = new JSONObject(request("GET", "/api/config", null));
         PanelConfig config = new PanelConfig();
+        config.language = root.optString("language", "");
         config.updateIntervalMs = root.optInt("updateIntervalMs", 1000);
         config.showCpu = root.optBoolean("showCpu", true);
         config.showGpu = root.optBoolean("showGpu", true);
@@ -155,7 +156,7 @@ public final class ApiClient {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8), 4096)) {
             int read;
             while ((read = reader.read(buffer)) >= 0) {
-                if (builder.length() + read > MAX_RESPONSE_CHARS) throw new IOException("Resposta grande demais");
+                if (builder.length() + read > MAX_RESPONSE_CHARS) throw new IOException("Response is too large");
                 builder.append(buffer, 0, read);
             }
         }

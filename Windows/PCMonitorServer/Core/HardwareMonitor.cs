@@ -1,6 +1,7 @@
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using LibreHardwareMonitor.Hardware;
+using static PCMonitorUSB.Localization.AppLanguage;
 using Microsoft.Win32;
 
 namespace PCMonitorUSB.Core;
@@ -109,7 +110,7 @@ public sealed class HardwareMonitor : IStatsProvider, IDisposable
         var motherboardHardware = raw.Where(x => IsHardware(x, "Motherboard", "SuperIO", "EmbeddedController")).ToArray();
 
         var cpuName = FirstHardwareName(cpuHardware, GetWindowsCpuName());
-        var gpuName = FirstHardwareName(gpuHardware, "GPU não identificada");
+        var gpuName = FirstHardwareName(gpuHardware, "N/A");
 
         var cpuTemperature = PickCpuTemperature(cpuHardware, motherboardHardware, out var cpuTemperatureSource);
         var cpu = new CpuStats(
@@ -250,7 +251,7 @@ public sealed class HardwareMonitor : IStatsProvider, IDisposable
         {
             // LibreHardwareMonitor remains the primary CPU name source.
         }
-        return "CPU não identificada";
+        return "N/A";
     }
 
     private static string GetWindowsName()
@@ -296,7 +297,7 @@ public sealed class HardwareMonitor : IStatsProvider, IDisposable
         {
             // A motherboard may not expose SMBIOS strings.
         }
-        return "Placa-mãe não identificada";
+        return "N/A";
     }
 
     private float? GetWindowsCpuUsage()
@@ -439,7 +440,7 @@ public sealed class HardwareMonitor : IStatsProvider, IDisposable
         var fallback = Pick(motherboardSensors, "Temperature", MotherboardCpuTemperatureScore);
         if (fallback.HasValue)
         {
-            source = "Sensor CPU da placa-mãe (LibreHardwareMonitor)";
+            source = T("Sensor de CPU da placa-mãe (LibreHardwareMonitor)", "Motherboard CPU sensor (LibreHardwareMonitor)");
             return fallback;
         }
 

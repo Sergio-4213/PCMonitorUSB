@@ -1,121 +1,96 @@
-# PC Monitor USB 2.0.2
+# PC Monitor USB 2.1.0
 
-Painel local que transforma qualquer celular Android compatível em um display USB de sensores e controle para Windows. O uso normal não depende de Wi-Fi, internet, conta, nuvem, telemetria ou servidor externo.
+[Português (Brasil)](README.pt-BR.md)
 
-## Arquivos prontos
+PC Monitor USB turns a compatible Android phone into a lightweight USB hardware display and control panel for Windows. Normal operation requires no Wi-Fi, internet connection, cloud service, account, telemetry, or subscription.
 
-Na pasta `Release-v2.0.2`:
+## Main features
 
-- `PCMonitorServer.exe`: servidor Windows 10/11 x64, autocontido e em arquivo único;
-- `PCMonitorUSB.apk`: aplicativo Android assinado, compatível com Android 5.0/API 21 ou superior;
-- `README.md`: manual de instalação e uso;
-- avisos das licenças utilizadas.
+- CPU temperature, usage, current clock, and package power when exposed by the hardware.
+- GPU temperature, hotspot, usage, core/VRAM clocks, VRAM, power, and fan readings when available.
+- RAM, optional network throughput, and disk activity.
+- Separate, responsive Monitor and Control modes in portrait and landscape.
+- Media, volume, desktop, Task Manager, Steam, AMD Software, and locally configured allowlisted actions.
+- Automatic USB detection, `adb reverse`, APK installation/update, and app launch after initial authorization.
+- Local-only server bound to `127.0.0.1`.
+- English and Brazilian Portuguese on Windows and Android.
 
-Mantenha o EXE e o APK na mesma pasta. O servidor instala ou atualiza o APK automaticamente quando encontra um celular autorizado.
+## Language
 
-## Primeira configuração
+On first run, the Windows app follows the Windows display language: Portuguese systems use Portuguese, and other systems use English. You can override this under **Settings > Language** with **Automatic (Windows)**, **Português**, or **English**. Reopen the Windows app after changing this option.
 
-1. No celular, ative **Opções do desenvolvedor** tocando sete vezes em **Número da versão**.
-2. Ative **Depuração USB**.
-3. Execute `PCMonitorServer.exe` e aceite a confirmação de administrador. Esse acesso é necessário para aumentar a leitura de temperatura, clock e potência do hardware.
-4. Clique em **Configurar celular**. No primeiro uso, confirme o download oficial do Android Platform-Tools.
-5. Conecte um cabo USB com suporte a dados.
-6. Desbloqueie o celular, aceite a chave RSA e marque **Sempre permitir deste computador**.
-7. Aguarde a instalação e a abertura automáticas do painel.
+The selected Windows language is sent through the local USB API, so the Android panel automatically uses the same language. No online translation service is used.
 
-Depois disso, o uso diário é apenas ligar o PC e conectar o cabo USB. O mesmo cabo transporta dados e fornece alimentação.
+## Initial setup
 
-### Mensagens comuns
+1. On the phone, enable **Developer options** by tapping **Build number** seven times.
+2. Enable **USB debugging**.
+3. Run `PCMonitorServer.exe` and accept the administrator prompt. Elevated access improves hardware sensor coverage.
+4. Select **Set up phone**. On first use, approve the official Android Platform-Tools download.
+5. Connect the phone with a data-capable USB cable.
+6. Unlock the phone, accept the RSA authorization, and select **Always allow from this computer**.
+7. Wait for the APK to install and open automatically.
 
-- **Celular desconectado**: confira cabo, porta USB e depuração USB.
-- **Aceite a autorização de depuração USB**: desbloqueie o aparelho e confirme a chave RSA.
-- **Dispositivo ADB offline**: reconecte o cabo.
-- **Android antigo demais**: é necessário Android 5.0/API 21 ou superior.
-- **ADB por rede ignorado**: somente aparelho físico ligado por USB é aceito.
+After setup, daily use is simply: start the PC and connect the USB cable. The cable carries data and powers the phone.
 
-## Painel Android
+## Windows application
 
-- **Monitor** mostra somente sensores: temperatura, uso, GHz/MHz e watts da CPU e GPU, hotspot, VRAM, RAM, ventoinha, rede e disco quando disponíveis.
-- **Controle** usa uma tela separada, mantém um resumo de CPU/GPU/RAM/VRAM e dedica o restante aos botões grandes e alinhados.
-- Portrait e landscape possuem layouts próprios. No horizontal, CPU e GPU usam áreas simétricas e centralizadas.
-- O menu `⋮` oferece brilho normal, baixo ou mínimo e proteção discreta da tela.
-- A tela fica ligada enquanto a comunicação está ativa. Se a conexão cair, os valores viram `--` e deixam de parecer atuais.
+The **Overview** page shows the real configuration detected on the current PC: Windows version, motherboard, CPU, primary/additional GPUs, and installed RAM. It also provides **Turn server on/off** and **Set up phone**. Minimizing or closing the window sends it to the notification area instead of leaving it on the taskbar.
 
-## Aplicativo Windows
+The **Sensors** page lists hardware, sensor type, value, and stable identifiers. It can export `sensors.txt` for troubleshooting. LibreHardwareMonitor is the primary source; missing values are displayed as `--` and are never invented.
 
-A visão geral possui **Ligar/Desligar servidor** e **Configurar celular**. O primeiro botão alterna o servidor local sem fechar o aplicativo; o texto e a cor acompanham o estado atual. Ao minimizar ou fechar a janela, o aplicativo some da barra de tarefas e permanece somente na área de notificação.
+On systems where CPU temperature, clock, or power needs lower-level access, **Extend sensor support** can download the official PawnIO installer after explicit confirmation and SHA-256 verification. PC Monitor USB never restarts the computer automatically.
 
-Na mesma tela é exibida a configuração realmente detectada no PC:
+## Android panel
 
-- nome do computador e versão do Windows;
-- fabricante e modelo da placa-mãe;
-- modelo exato da CPU;
-- GPU principal e GPUs adicionais;
-- quantidade total de RAM.
+- **Monitor** prioritizes detailed CPU/GPU/RAM/VRAM data.
+- **Control** keeps a compact live summary and uses the remaining space for large, aligned buttons.
+- Portrait and landscape have independent layouts.
+- The `⋮` menu controls activity-only brightness and optional screen protection.
+- If communication is lost, stale values are replaced with `--` and visually dimmed.
 
-A GPU principal não é escolhida pela posição em uma lista. O coletor agrupa cada placa pelo identificador físico do LibreHardwareMonitor, pontua os sensores reais disponíveis e usa um desempate estável. Assim, temperatura, clock, potência e VRAM nunca são misturados entre placas diferentes.
+## Security
 
-### Sensores
+The phone sends only allowlisted command IDs. It cannot submit arbitrary executable paths, PowerShell, CMD, or shell commands. Custom action targets are stored and validated on Windows.
 
-O servidor usa `LibreHardwareMonitorLib` 0.9.6 e seleciona cada leitura pela combinação de `HardwareType`, `SensorType`, nome e identificador. Valores ausentes são mostrados como `--`, nunca estimados.
+The HTTP server listens only on `127.0.0.1`; USB transport uses authenticated ADB reverse. There is no public binding, router port forwarding, UPnP, analytics, or telemetry.
 
-A aba **Sensores** permite atualizar a lista, exportar `sensors.txt` e, somente quando necessário, instalar suporte adicional de baixo nível. Essa instalação sempre exige confirmação e pode pedir uma reinicialização posterior; o programa nunca reinicia o computador sozinho.
+## Compatibility
 
-### Segurança dos controles
+- Windows 10/11 x64.
+- AMD, Intel, or NVIDIA hardware supported by LibreHardwareMonitor.
+- Android 5.0/API 21 or later; Android 8.1 Go is a primary target.
+- No Android Studio or separate ADB installation is required for normal use.
 
-O celular envia somente IDs permitidos, como `volume_up` ou `media_play_pause`. O servidor não aceita caminhos, PowerShell, CMD ou comandos arbitrários recebidos do APK. Botões personalizados são configurados localmente no Windows e limitados a programas/atalhos existentes, URLs válidas, teclas permitidas e ações internas.
+Exact sensor availability depends on the motherboard, GPU, firmware, and driver. The application does not change BIOS, PBO, overclock, undervolt, drivers, power plans, or GPU tuning.
 
-O servidor escuta exclusivamente em `127.0.0.1`. Não há CORS aberto, binding público, UPnP, telemetria ou encaminhamento no roteador.
+## Local data
 
-## API local
+- Configuration: `%LOCALAPPDATA%\PCMonitorUSB\config.json`
+- Rotating log: `%LOCALAPPDATA%\PCMonitorUSB\logs\app.log`
+- Platform-Tools: `%LOCALAPPDATA%\PCMonitorUSB\platform-tools`
 
-- `GET /api/stats`: sensores atuais;
-- `GET /api/system`: configuração identificada do PC;
-- `GET /api/config`: layout, limites térmicos e botões;
-- `GET /api/ping`: teste autenticado;
-- `POST /api/command`: ação permitida, autenticada pelo token temporário `X-PCMonitor-Token`.
+## Build
 
-O ADB reverse transporta as requisições do loopback do Android para o loopback do Windows, somente pelo cabo USB.
-
-## Compatibilidade
-
-- Windows 10/11 x64;
-- CPU AMD ou Intel;
-- GPU AMD, NVIDIA ou Intel, incluindo computadores com vídeo integrado e dedicado;
-- Android 5.0/API 21 ou superior;
-- FPS permanece oculto e `null` enquanto não existir uma fonte real.
-
-A disponibilidade de hotspot, potência e ventoinha depende do que o hardware e o driver expõem. O aplicativo não altera BIOS, PBO, overclock, undervolt, drivers, plano de energia ou ajustes da GPU.
-
-## Dados locais
-
-- configuração: `%LOCALAPPDATA%\PCMonitorUSB\config.json`;
-- logs rotativos: `%LOCALAPPDATA%\PCMonitorUSB\logs\app.log`;
-- Platform-Tools: `%LOCALAPPDATA%\PCMonitorUSB\platform-tools`.
-
-Na primeira execução 2.0, dados e inicialização automática da versão anterior são migrados. No celular, o aplicativo anterior só é removido depois que a nova instalação for validada.
-
-## Compilar
-
-Windows:
+Windows requires the .NET 8 SDK:
 
 ```powershell
-dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.0.2
+dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.1.0
 ```
 
-Android: use JDK 17, Gradle 8.2.1 e Android SDK 34 para executar `assembleRelease`; alinhe e assine o APK antes de instalar.
+Android requires JDK 17, Gradle 8.2.1, and Android SDK 34. Run `assembleRelease`, then align and sign the APK.
 
-## Estrutura
+## Project structure
 
 ```text
 PCMonitorUSB/
-├── Windows/PCMonitorServer/
-├── Windows/PCMonitorServer.Tests/
-├── Android/app/src/main/java/com/pcmonitorusb/
-├── Android/app/src/main/res/layout/
-├── Android/app/src/main/res/layout-land/
-├── docs/TEST-REPORT.md
-└── Release-v2.0.2/
+|-- Windows/PCMonitorServer/
+|-- Windows/PCMonitorServer.Tests/
+|-- Android/app/src/main/java/com/pcmonitorusb/
+|-- Android/app/src/main/res/layout/
+|-- Android/app/src/main/res/layout-land/
+|-- docs/
+`-- README.pt-BR.md
 ```
 
-Referências: [ADB reverse](https://developer.android.com/develop/ui/views/layout/webapps/access-local-server), [Android Debug Bridge](https://developer.android.com/tools/adb), [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor).
+References: [ADB reverse](https://developer.android.com/develop/ui/views/layout/webapps/access-local-server), [Android Debug Bridge](https://developer.android.com/tools/adb), and [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor).
