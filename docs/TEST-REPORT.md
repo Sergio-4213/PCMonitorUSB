@@ -32,8 +32,11 @@ Real-machine snapshot during this run:
 - CPU: `AMD Ryzen 7 3800XT`;
 - GPU: `AMD Radeon RX 7600`;
 - sensors enumerated: 134;
-- GPU temperature: 61 °C at the sampled moment;
-- CPU temperature: not exposed in this run (`--`), while CPU usage was available.
+- live server CPU temperature: 63.88 °C;
+- live server CPU usage: 43.33%;
+- live server CPU clock: 4.325 GHz;
+- live server CPU package power: 68.06 W;
+- GPU temperature: 61 °C at the sampled moment.
 
 The UI test generated screenshots in `%TEMP%\PCMonitorUSBTests` and verified that the title and Save button remained inside the application window.
 
@@ -51,4 +54,4 @@ Checks included English default resources, Brazilian Portuguese resources, portr
 
 ## Verification limits
 
-Sensor availability depends on the connected PC and installed low-level driver support. CPU temperature was not exposed by LibreHardwareMonitor during this specific run; the Windows UI keeps the value unavailable rather than inventing it and offers the explicit PawnIO support workflow. No reboot was performed.
+Sensor availability depends on the connected PC and installed low-level driver support. The isolated test process could not read CPU temperature while the main elevated server already owned the active hardware-monitoring session; this did not represent the running application's result. A direct request to the live server confirmed valid CPU temperature, usage, clock, and package-power readings. No reboot was performed.
