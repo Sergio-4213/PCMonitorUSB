@@ -37,10 +37,10 @@ public sealed record SystemProfile(
 {
     public static SystemProfile Empty { get; } = new(
         Environment.MachineName,
-        "Windows não identificado",
-        "Placa-mãe não identificada",
-        "CPU não identificada",
-        "GPU não identificada",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
         Array.Empty<string>(),
         0);
 }
@@ -56,8 +56,8 @@ public sealed record StatsSnapshot(
 {
     public static StatsSnapshot Empty { get; } = new(
         DateTimeOffset.UtcNow,
-        new CpuStats("CPU não identificada", null, null, null, null),
-        new GpuStats("GPU não identificada", null, null, null, null, null, null, null, null, null, null),
+        new CpuStats("N/A", null, null, null, null),
+        new GpuStats("N/A", null, null, null, null, null, null, null, null, null, null),
         new RamStats(0, 0, 0),
         new NetworkStats(null, null),
         new DiskStats(null, null),

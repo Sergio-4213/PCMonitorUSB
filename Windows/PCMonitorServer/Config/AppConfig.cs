@@ -18,6 +18,7 @@ public sealed class AppConfig
     public float GpuElevatedTemperature { get; set; } = 75;
     public float GpuCriticalTemperature { get; set; } = 90;
     public string Theme { get; set; } = "dark";
+    public string Language { get; set; } = "auto";
     public bool AutoInstallApk { get; set; } = true;
     public bool RestrictAndroidModels { get; set; }
     public List<string> AllowedModelPrefixes { get; set; } = [];
@@ -38,6 +39,7 @@ public sealed class AppConfig
         GpuCriticalTemperature = Math.Clamp(GpuCriticalTemperature, GpuElevatedTemperature + 1, 120);
         Buttons ??= ButtonConfig.CreateDefaults();
         AllowedModelPrefixes ??= [];
+        Language = Language?.ToLowerInvariant() is "pt" or "en" ? Language.ToLowerInvariant() : "auto";
     }
 }
 

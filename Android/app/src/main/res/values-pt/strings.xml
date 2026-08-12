@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PC Monitor USB</string>
+    <string name="app_header">PC MONITOR USB</string>
+    <string name="app_header_landscape">PC MONITOR USB  •  DISPLAY USB</string>
+    <string name="usb_display">DISPLAY USB</string>
+    <string name="mode_monitor">MONITOR</string>
+    <string name="mode_control">CONTROLE</string>
+    <string name="computer_controls">CONTROLES DO COMPUTADOR</string>
+    <string name="live_summary">RESUMO AO VIVO</string>
+    <string name="previous">ANTERIOR</string>
+    <string name="next">PRÓXIMA</string>
+    <string name="task_manager">TAREFAS</string>
+    <string name="disk_value">DISCO --%%</string>
+    <string name="usage_value">USO --%%</string>
+    <string name="command_failed">Falha ao executar o comando</string>
+    <string name="connection_lost">CONEXÃO PERDIDA</string>
+    <string name="disconnected">● DESCONECTADO</string>
+    <string name="brightness_normal">Brilho normal</string>
+    <string name="brightness_low">Brilho baixo</string>
+    <string name="brightness_minimum">Brilho mínimo</string>
+    <string name="enable_protection">Ativar modo de proteção</string>
+    <string name="disable_protection">Desativar modo de proteção</string>
+    <string name="protection_enabled">Modo de proteção ativado</string>
+    <string name="protection_disabled">Modo de proteção desativado</string>
+    <string name="disk_format">DISCO %1$s</string>
+    <string name="usage_format">USO %1$s</string>
+</resources>

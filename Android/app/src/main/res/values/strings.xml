@@ -1,4 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PC Monitor USB</string>
+    <string name="app_header">PC MONITOR USB</string>
+    <string name="app_header_landscape">PC MONITOR USB  •  USB DISPLAY</string>
+    <string name="usb_display">USB DISPLAY</string>
+    <string name="mode_monitor">MONITOR</string>
+    <string name="mode_control">CONTROL</string>
+    <string name="computer_controls">COMPUTER CONTROLS</string>
+    <string name="live_summary">LIVE SUMMARY</string>
+    <string name="previous">PREVIOUS</string>
+    <string name="next">NEXT</string>
+    <string name="task_manager">TASK MANAGER</string>
+    <string name="disk_value">DISK --%%</string>
+    <string name="usage_value">USED --%%</string>
+    <string name="command_failed">Command failed</string>
+    <string name="connection_lost">CONNECTION LOST</string>
+    <string name="disconnected">● DISCONNECTED</string>
+    <string name="brightness_normal">Normal brightness</string>
+    <string name="brightness_low">Low brightness</string>
+    <string name="brightness_minimum">Minimum brightness</string>
+    <string name="enable_protection">Enable protection mode</string>
+    <string name="disable_protection">Disable protection mode</string>
+    <string name="protection_enabled">Protection mode enabled</string>
+    <string name="protection_disabled">Protection mode disabled</string>
+    <string name="disk_format">DISK %1$s</string>
+    <string name="usage_format">USED %1$s</string>
 </resources>
