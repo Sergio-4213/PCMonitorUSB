@@ -9,7 +9,7 @@ The tested build has no public network listener and no remotely supplied arbitra
 1. **Local sensor endpoints lacked authentication.** Commands required the token, but `/api/stats`, `/api/system`, and `/api/config` returned data to unauthenticated local requests. All `/api/*` endpoints now require the temporary token.
 2. **Elevated startup referenced a user-writable portable EXE.** A malicious process already running as the same user could replace that file and wait for the elevated logon task. Automatic startup now copies the EXE and APK to a protected Program Files directory and points the elevated task there.
 
-The existing scheduled task on the test PC was inspected but not modified during the assessment. Installing 2.1.1 and saving the automatic-startup setting migrates its target to the protected location.
+The existing scheduled task on the test PC was inspected but not modified during the assessment. Running 2.1.1 with automatic startup already enabled migrates its target to the protected location; enabling the option later performs the same protected installation after confirmation.
 
 ## Tests performed
 
