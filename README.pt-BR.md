@@ -1,4 +1,4 @@
-# PC Monitor USB 2.1.0
+# PC Monitor USB 2.1.1
 
 [English](README.md)
 
@@ -53,7 +53,9 @@ Em computadores nos quais a temperatura, o clock ou a potência da CPU exigem ac
 
 O celular envia somente IDs de comandos permitidos. Ele não pode enviar caminhos arbitrários, PowerShell, CMD ou comandos de shell. Os destinos de ações personalizadas ficam armazenados e são validados no Windows.
 
-O servidor HTTP escuta somente em `127.0.0.1`; o transporte USB usa ADB reverse autenticado. Não há exposição pública, encaminhamento de portas no roteador, UPnP, analytics ou telemetria.
+O servidor HTTP escuta somente em `127.0.0.1`; o transporte USB usa ADB reverse autenticado. Todos os endpoints `/api/*` exigem um token temporário de 192 bits, recriado sempre que o servidor Windows é iniciado. As requisições possuem limite rígido de tamanho, os comandos têm limitação de frequência e tokens duplicados ou inválidos são rejeitados. Não há exposição pública, encaminhamento de portas no roteador, UPnP, analytics ou telemetria.
+
+Quando a inicialização automática é ativada, a tarefa elevada aponta para uma cópia protegida em Arquivos de Programas, e não para um EXE portátil gravável pelo usuário. Consulte [SECURITY.md](SECURITY.md) e o [relatório de testes de segurança](docs/SECURITY-REPORT.md).
 
 ## Compatibilidade
 
@@ -75,7 +77,7 @@ A disponibilidade exata dos sensores depende da placa-mãe, GPU, firmware e driv
 O Windows exige o SDK do .NET 8:
 
 ```powershell
-dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.1.0
+dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.1.1
 ```
 
 O Android exige JDK 17, Gradle 8.2.1 e Android SDK 34. Execute `assembleRelease` e depois alinhe e assine o APK.

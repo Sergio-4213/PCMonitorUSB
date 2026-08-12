@@ -1,4 +1,4 @@
-# PC Monitor USB 2.1.0
+# PC Monitor USB 2.1.1
 
 [Português (Brasil)](README.pt-BR.md)
 
@@ -53,7 +53,9 @@ On systems where CPU temperature, clock, or power needs lower-level access, **Ex
 
 The phone sends only allowlisted command IDs. It cannot submit arbitrary executable paths, PowerShell, CMD, or shell commands. Custom action targets are stored and validated on Windows.
 
-The HTTP server listens only on `127.0.0.1`; USB transport uses authenticated ADB reverse. There is no public binding, router port forwarding, UPnP, analytics, or telemetry.
+The HTTP server listens only on `127.0.0.1`; USB transport uses authenticated ADB reverse. Every `/api/*` endpoint requires a temporary 192-bit token that is regenerated whenever the Windows server starts. Requests have strict body-size limits, commands are rate-limited, and duplicate or invalid tokens are rejected. There is no public binding, router port forwarding, UPnP, analytics, or telemetry.
+
+When automatic startup is enabled, the elevated scheduled task points to a protected copy under Program Files instead of a user-writable portable EXE. See [SECURITY.md](SECURITY.md) and the [security test report](docs/SECURITY-REPORT.md).
 
 ## Compatibility
 
@@ -75,7 +77,7 @@ Exact sensor availability depends on the motherboard, GPU, firmware, and driver.
 Windows requires the .NET 8 SDK:
 
 ```powershell
-dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.1.0
+dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.1.1
 ```
 
 Android requires JDK 17, Gradle 8.2.1, and Android SDK 34. Run `assembleRelease`, then align and sign the APK.

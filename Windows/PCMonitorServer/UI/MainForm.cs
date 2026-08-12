@@ -572,8 +572,8 @@ public sealed class MainForm : Form
             if (!startupWasEnabled && config.StartWithWindows)
             {
                 var consent = MessageBox.Show(
-                    T("Para iniciar automaticamente e conservar o acesso aos sensores do hardware, o PC Monitor USB criará uma tarefa agendada chamada 'PC Monitor USB', executada somente no seu login e com privilégios elevados.\n\nDeseja continuar?",
-                      "To start automatically and retain access to hardware sensors, PC Monitor USB will create a scheduled task named 'PC Monitor USB', which runs only when you sign in and with elevated privileges.\n\nDo you want to continue?"),
+                    T("Para iniciar automaticamente com acesso aos sensores, o PC Monitor USB copiará o EXE e o APK para uma pasta protegida em Arquivos de Programas e criará uma tarefa agendada chamada 'PC Monitor USB', executada somente no seu login e com privilégios elevados. Isso impede que um arquivo portátil gravável seja usado para obter elevação.\n\nDeseja continuar?",
+                      "To start automatically with sensor access, PC Monitor USB will copy the EXE and APK to a protected Program Files folder and create a scheduled task named 'PC Monitor USB', which runs only when you sign in and with elevated privileges. This prevents a writable portable file from being used for elevation.\n\nDo you want to continue?"),
                     T("Confirmar início com Windows", "Confirm Windows startup"), MessageBoxButtons.YesNo, MessageBoxIcon.Information);
                 if (consent != DialogResult.Yes)
                 {
@@ -610,11 +610,12 @@ public sealed class MainForm : Form
         };
         if (enabled)
         {
+            var startupExecutable = PrepareSecureStartupCopy();
             startInfo.ArgumentList.Add("/Create");
             startInfo.ArgumentList.Add("/TN");
             startInfo.ArgumentList.Add("PC Monitor USB");
             startInfo.ArgumentList.Add("/TR");
-            startInfo.ArgumentList.Add($"\"{Environment.ProcessPath}\" --minimized");
+            startInfo.ArgumentList.Add($"\"{startupExecutable}\" --minimized");
             startInfo.ArgumentList.Add("/SC");
             startInfo.ArgumentList.Add("ONLOGON");
             startInfo.ArgumentList.Add("/RL");
@@ -633,6 +634,57 @@ public sealed class MainForm : Form
         process?.WaitForExit(5000);
         if (enabled && process?.ExitCode != 0)
             throw new InvalidOperationException(T("O Windows não conseguiu criar a tarefa de inicialização.", "Windows could not create the startup task."));
+    }
+
+    internal static string GetSecureStartupExecutablePath()
+    {
+        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+        if (string.IsNullOrWhiteSpace(programFiles))
+            throw new InvalidOperationException(T("A pasta Arquivos de Programas não foi encontrada.", "The Program Files folder could not be found."));
+        return Path.Combine(programFiles, "PC Monitor USB", "PCMonitorServer.exe");
+    }
+
+    internal static bool IsSecureStartupLocation(string path)
+    {
+        try
+        {
+            var fullPath = Path.GetFullPath(path);
+            var roots = new[]
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+            };
+            return roots.Where(x => !string.IsNullOrWhiteSpace(x)).Any(root =>
+                fullPath.StartsWith(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
+                    StringComparison.OrdinalIgnoreCase));
+        }
+        catch { return false; }
+    }
+
+    private static string PrepareSecureStartupCopy()
+    {
+        var sourceExecutable = Environment.ProcessPath ?? throw new InvalidOperationException("Executable path unavailable.");
+        var destinationExecutable = GetSecureStartupExecutablePath();
+        var destinationDirectory = Path.GetDirectoryName(destinationExecutable)!;
+        Directory.CreateDirectory(destinationDirectory);
+        if ((File.GetAttributes(destinationDirectory) & FileAttributes.ReparsePoint) != 0)
+            throw new InvalidOperationException(T("A pasta protegida de inicialização não pode ser um link ou ponto de junção.", "The protected startup folder cannot be a link or junction."));
+
+        if (!string.Equals(Path.GetFullPath(sourceExecutable), Path.GetFullPath(destinationExecutable), StringComparison.OrdinalIgnoreCase))
+        {
+            var sourceVersion = FileVersionInfo.GetVersionInfo(sourceExecutable).FileVersion;
+            var destinationVersion = File.Exists(destinationExecutable)
+                ? FileVersionInfo.GetVersionInfo(destinationExecutable).FileVersion
+                : null;
+            if (!File.Exists(destinationExecutable) || !string.Equals(sourceVersion, destinationVersion, StringComparison.Ordinal))
+                File.Copy(sourceExecutable, destinationExecutable, true);
+        }
+
+        var sourceApk = Path.Combine(AppContext.BaseDirectory, "PCMonitorUSB.apk");
+        var destinationApk = Path.Combine(destinationDirectory, "PCMonitorUSB.apk");
+        if (File.Exists(sourceApk) && !string.Equals(Path.GetFullPath(sourceApk), Path.GetFullPath(destinationApk), StringComparison.OrdinalIgnoreCase))
+            File.Copy(sourceApk, destinationApk, true);
+        return destinationExecutable;
     }
 
     private static void DeleteStartupTask(string taskName)

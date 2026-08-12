@@ -20,8 +20,9 @@ var tests = new List<(string Name, Func<Task> Run)>
     ("GPU principal é escolhida sem misturar vídeo integrado e dedicado", TestPrimaryGpuSelection),
     ("Configuração normaliza porta e intervalo", TestConfigNormalization),
     ("Idioma alterna entre português e inglês", TestLocalization),
+    ("Inicialização elevada exige pasta protegida", TestStartupSecurity),
     ("Lista de comandos nega comando arbitrário", TestCommandAllowlist),
-    ("API local exige token somente para comandos", TestLocalApi),
+    ("API local exige token em todos os endpoints e limita abuso", TestLocalApi),
     ("Janela mantém título e botão Salvar dentro da área visível", TestWindowLayout),
     ("ADB genérico conecta Android USB real quando disponível", TestRealAdbCompatibility),
     ("LibreHardwareMonitor coleta no computador real", TestRealHardwareMonitor)
@@ -114,6 +115,15 @@ static Task TestLocalization()
     return Task.CompletedTask;
 }
 
+static Task TestStartupSecurity()
+{
+    var protectedPath = MainForm.GetSecureStartupExecutablePath();
+    Require(MainForm.IsSecureStartupLocation(protectedPath), "O destino protegido de inicialização não foi reconhecido.");
+    var writablePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "PCMonitorServer.exe");
+    Require(!MainForm.IsSecureStartupLocation(writablePath), "Uma cópia portátil gravável foi aceita como destino elevado.");
+    return Task.CompletedTask;
+}
+
 static Task TestPrimaryGpuSelection()
 {
     RawSensor[] sensors =
@@ -135,8 +145,15 @@ static Task TestCommandAllowlist()
 {
     var store = NewStore(FindFreePort());
     var service = new CommandService(store);
-    var result = service.Execute("powershell -enc qualquer-coisa");
-    Require(!result.Success, "Comando arbitrário foi aceito.");
+    foreach (var payload in new[]
+    {
+        "powershell -enc qualquer-coisa", "cmd.exe /c whoami", "../../Windows/System32/cmd.exe",
+        "open_program", "media_play_pause;calc.exe", new string('A', 1024), "custom_1"
+    })
+    {
+        var result = service.Execute(payload);
+        Require(!result.Success, "Comando arbitrário foi aceito: " + payload[..Math.Min(payload.Length, 40)]);
+    }
     return Task.CompletedTask;
 }
 
@@ -148,17 +165,42 @@ static async Task TestLocalApi()
     await using var server = new LocalServer(new FakeStatsProvider(), store, commands);
     await server.StartAsync();
     using var client = new HttpClient(new HttpClientHandler { UseProxy = false }) { BaseAddress = new Uri($"http://127.0.0.1:{port}") };
+    var root = await client.GetAsync("/");
+    Require(root.StatusCode == HttpStatusCode.OK, "Painel local não respondeu 200.");
+    Require(!root.Headers.Contains("Server"), "O servidor revelou sua implementação no cabeçalho Server.");
+    Require(root.Headers.TryGetValues("Content-Security-Policy", out var csp) && csp.Any(), "Content-Security-Policy ausente.");
+    Require(!root.Headers.Contains("Access-Control-Allow-Origin"), "CORS foi aberto indevidamente.");
+    var statsWithoutToken = await client.GetAsync("/api/stats");
+    Require(statsWithoutToken.StatusCode == HttpStatusCode.Unauthorized, "Stats sem token não foi negado.");
+    client.DefaultRequestHeaders.Add("X-PCMonitor-Token", "token-incorreto");
+    var statsWithWrongToken = await client.GetAsync("/api/stats");
+    Require(statsWithWrongToken.StatusCode == HttpStatusCode.Unauthorized, "Stats com token incorreto não foi negado.");
+    client.DefaultRequestHeaders.Remove("X-PCMonitor-Token");
+    client.DefaultRequestHeaders.Add("X-PCMonitor-Token", server.ApiToken);
     var stats = await client.GetAsync("/api/stats");
-    Require(stats.StatusCode == HttpStatusCode.OK, "Stats não respondeu 200.");
+    Require(stats.StatusCode == HttpStatusCode.OK, "Stats autenticado não respondeu 200.");
     var system = await client.GetFromJsonAsync<SystemProfile>("/api/system");
     Require(system?.Cpu == "AMD Ryzen 7 3800XT", "Configuração exata do PC não foi publicada.");
     var panelConfig = await client.GetFromJsonAsync<JsonElement>("/api/config");
     Require(panelConfig.GetProperty("language").GetString() == "pt", "A API não publicou o idioma selecionado para o Android.");
-    var unauthorized = await client.PostAsJsonAsync("/api/command", new { command = "media_play_pause" });
-    Require(unauthorized.StatusCode == HttpStatusCode.Unauthorized, "Comando sem token não foi negado.");
-    client.DefaultRequestHeaders.Add("X-PCMonitor-Token", server.ApiToken);
+
+    using var duplicateTokenRequest = new HttpRequestMessage(HttpMethod.Get, "/api/stats");
+    duplicateTokenRequest.Headers.TryAddWithoutValidation("X-PCMonitor-Token", new[] { server.ApiToken, server.ApiToken });
+    var duplicateToken = await client.SendAsync(duplicateTokenRequest);
+    Require(duplicateToken.StatusCode == HttpStatusCode.Unauthorized, "Cabeçalho de token duplicado não foi negado.");
+
+    using var invalidContent = new StringContent("command=cmd.exe");
+    var invalidContentResponse = await client.PostAsync("/api/command", invalidContent);
+    Require(invalidContentResponse.StatusCode == HttpStatusCode.BadRequest, "Content-Type inválido não foi negado.");
+    using var oversized = new StringContent("{\"command\":\"" + new string('A', 9000) + "\"}", System.Text.Encoding.UTF8, "application/json");
+    var oversizedResponse = await client.PostAsync("/api/command", oversized);
+    Require(oversizedResponse.StatusCode == HttpStatusCode.RequestEntityTooLarge, "Corpo acima do limite não foi negado.");
+
+    await Task.Delay(100);
     var rejected = await client.PostAsJsonAsync("/api/command", new { command = "cmd.exe" });
     Require(rejected.StatusCode == HttpStatusCode.BadRequest, "Comando fora da lista não foi rejeitado.");
+    var flood = await client.PostAsJsonAsync("/api/command", new { command = "cmd.exe" });
+    Require((int)flood.StatusCode == 429, "Limite de comandos em sequência não foi aplicado.");
     await server.StopAsync();
 }
 
@@ -206,7 +248,7 @@ static Task TestWindowLayout()
             var save = Descendants(form).OfType<Button>().Single(x => x.Text == "Salvar configurações");
             var serverToggle = Descendants(form).OfType<Button>().Single(x => x.Text == "Ligar servidor");
             Require(serverToggle.Enabled, "O botão para ligar o servidor não está disponível quando ele está parado.");
-            var output = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "settings-layout-2.1.0.png");
+            var output = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "settings-layout-2.1.1.png");
             Directory.CreateDirectory(Path.GetDirectoryName(output)!);
             using var bitmap = new Bitmap(form.ClientSize.Width, form.ClientSize.Height);
             form.DrawToBitmap(bitmap, form.ClientRectangle);
@@ -221,7 +263,7 @@ static Task TestWindowLayout()
 
             tabs.SelectedIndex = 0;
             Application.DoEvents();
-            var dashboardOutput = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "dashboard-server-toggle-2.1.0.png");
+            var dashboardOutput = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "dashboard-server-toggle-2.1.1.png");
             using var dashboardBitmap = new Bitmap(form.ClientSize.Width, form.ClientSize.Height);
             form.DrawToBitmap(dashboardBitmap, form.ClientRectangle);
             dashboardBitmap.Save(dashboardOutput);

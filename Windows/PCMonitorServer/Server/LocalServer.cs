@@ -29,6 +29,7 @@ public sealed class LocalServer : IAsyncDisposable
     private readonly IStatsProvider _stats;
     private readonly ConfigStore _config;
     private readonly CommandService _commands;
+    private readonly byte[] _apiTokenBytes;
     private WebApplication? _app;
     private long _lastCommandTick;
 
@@ -38,6 +39,7 @@ public sealed class LocalServer : IAsyncDisposable
         _config = config;
         _commands = commands;
         ApiToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
+        _apiTokenBytes = System.Text.Encoding.ASCII.GetBytes(ApiToken);
     }
 
     public string ApiToken { get; }
@@ -73,23 +75,29 @@ public sealed class LocalServer : IAsyncDisposable
             context.Response.Headers.CacheControl = "no-store";
             context.Response.Headers.XContentTypeOptions = "nosniff";
             context.Response.Headers["Referrer-Policy"] = "no-referrer";
+            context.Response.Headers["X-Frame-Options"] = "DENY";
+            context.Response.Headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'";
+            context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+            if (context.Request.Path.StartsWithSegments("/api") && !IsAuthorized(context))
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return;
+            }
+            if (context.Request.Path.StartsWithSegments("/api")) Connection.MarkContact();
             await next();
         });
 
         app.MapGet("/", () => Results.Content(DashboardHtml, "text/html; charset=utf-8"));
         app.MapGet("/api/stats", (HttpContext context) =>
         {
-            MarkAuthenticatedPanel(context);
             return Results.Ok(_stats.Current);
         });
         app.MapGet("/api/system", (HttpContext context) =>
         {
-            MarkAuthenticatedPanel(context);
             return Results.Ok(_stats.Profile);
         });
         app.MapGet("/api/config", (HttpContext context) =>
         {
-            MarkAuthenticatedPanel(context);
             var config = _config.Current;
             var buttons = config.Buttons
                 .Where(x => x.Enabled)
@@ -111,14 +119,10 @@ public sealed class LocalServer : IAsyncDisposable
         });
         app.MapGet("/api/ping", (HttpContext context) =>
         {
-            if (!IsAuthorized(context)) return Results.Unauthorized();
-            Connection.MarkContact();
             return Results.Ok(new { ok = true, server = "PC Monitor USB" });
         });
         app.MapPost("/api/command", async (HttpContext context) =>
         {
-            if (!IsAuthorized(context)) return Results.Unauthorized();
-            Connection.MarkContact();
             if (context.Request.ContentType is null ||
                 !context.Request.ContentType.StartsWith("application/json", StringComparison.OrdinalIgnoreCase))
                 return Results.BadRequest(new { ok = false, error = AppLanguage.T("Content-Type inválido.", "Invalid Content-Type.") });
@@ -149,15 +153,13 @@ public sealed class LocalServer : IAsyncDisposable
         SimpleLog.Info($"Servidor iniciado em 127.0.0.1:{Port}.");
     }
 
-    private bool IsAuthorized(HttpContext context) =>
-        context.Request.Headers.TryGetValue("X-PCMonitor-Token", out var provided) &&
-        CryptographicOperations.FixedTimeEquals(
-            System.Text.Encoding.UTF8.GetBytes(provided.ToString()),
-            System.Text.Encoding.UTF8.GetBytes(ApiToken));
-
-    private void MarkAuthenticatedPanel(HttpContext context)
+    private bool IsAuthorized(HttpContext context)
     {
-        if (IsAuthorized(context)) Connection.MarkContact();
+        if (!context.Request.Headers.TryGetValue("X-PCMonitor-Token", out var provided) || provided.Count != 1)
+            return false;
+        var token = provided[0];
+        if (token is null || token.Length != ApiToken.Length) return false;
+        return CryptographicOperations.FixedTimeEquals(System.Text.Encoding.ASCII.GetBytes(token), _apiTokenBytes);
     }
 
     public async Task StopAsync()
@@ -176,13 +178,11 @@ public sealed class LocalServer : IAsyncDisposable
     private static string DashboardHtml => AppLanguage.T("""
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>PC Monitor USB</title><style>body{font:16px system-ui;background:#0c0d0f;color:#eee;margin:0;padding:24px}main{max-width:800px;margin:auto}h1{font-size:24px}pre{background:#16181c;border:1px solid #30343b;border-radius:10px;padding:18px;overflow:auto;min-height:300px}.ok{color:#56d889}</style></head>
-<body><main><h1>PC Monitor USB <span class="ok">● ATIVO</span></h1><p>Painel local de diagnóstico. A API escuta somente em 127.0.0.1.</p><pre id="stats">Carregando...</pre></main>
-<script>async function u(){try{let r=await fetch('/api/stats',{cache:'no-store'});document.querySelector('#stats').textContent=JSON.stringify(await r.json(),null,2)}catch(e){document.querySelector('#stats').textContent='Sem resposta do servidor'}}u();setInterval(u,1000)</script></body></html>
+<body><main><h1>PC Monitor USB <span class="ok">● ATIVO</span></h1><p>Servidor local em execução. A API escuta somente em 127.0.0.1 e exige o token temporário enviado ao aplicativo Android pelo ADB.</p><pre>Os sensores permanecem disponíveis no aplicativo Windows e no painel Android autenticado.</pre></main></body></html>
 """, """
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>PC Monitor USB</title><style>body{font:16px system-ui;background:#0c0d0f;color:#eee;margin:0;padding:24px}main{max-width:800px;margin:auto}h1{font-size:24px}pre{background:#16181c;border:1px solid #30343b;border-radius:10px;padding:18px;overflow:auto;min-height:300px}.ok{color:#56d889}</style></head>
-<body><main><h1>PC Monitor USB <span class="ok">● ACTIVE</span></h1><p>Local diagnostics panel. The API listens only on 127.0.0.1.</p><pre id="stats">Loading...</pre></main>
-<script>async function u(){try{let r=await fetch('/api/stats',{cache:'no-store'});document.querySelector('#stats').textContent=JSON.stringify(await r.json(),null,2)}catch(e){document.querySelector('#stats').textContent='No response from server'}}u();setInterval(u,1000)</script></body></html>
+<body><main><h1>PC Monitor USB <span class="ok">● ACTIVE</span></h1><p>Local server running. The API listens only on 127.0.0.1 and requires the temporary token delivered to the Android app through ADB.</p><pre>Sensors remain available in the Windows application and the authenticated Android panel.</pre></main></body></html>
 """);
 }
 

@@ -1,4 +1,4 @@
-# Test report — PC Monitor USB 2.1.0
+# Test report — PC Monitor USB 2.1.1
 
 Validated locally on August 11, 2026.
 
@@ -10,7 +10,7 @@ Command:
 .\.tools\dotnet\dotnet.exe run --project Windows\PCMonitorServer.Tests\PCMonitorServer.Tests.csproj -c Release --no-restore
 ```
 
-Result: **10/10 passed**.
+Result: **11/11 passed**.
 
 Covered scenarios:
 
@@ -20,7 +20,9 @@ Covered scenarios:
 - stable primary-GPU selection without mixing integrated and discrete sensors;
 - configuration normalization, including invalid-language fallback;
 - Portuguese/English localization and built-in button labels;
-- command allowlist rejection;
+- protected elevated-startup destination validation;
+- command allowlist rejection against injection-style payloads;
+- authentication on every API endpoint, invalid and duplicate token rejection, body-size limit, and command rate limiting;
 - local API, temporary token, system profile, and Android language publication;
 - Windows window bounds, title, Save button, and server toggle;
 - real USB Android detection and communication;
