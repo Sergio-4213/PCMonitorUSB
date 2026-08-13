@@ -20,6 +20,7 @@ public sealed class AppConfig
     public string Theme { get; set; } = "dark";
     public string Language { get; set; } = "auto";
     public bool AutoInstallApk { get; set; } = true;
+    public bool EnableWakeOnLan { get; set; } = true;
     public bool RestrictAndroidModels { get; set; }
     public List<string> AllowedModelPrefixes { get; set; } = [];
     public List<ButtonConfig> Buttons { get; set; } = ButtonConfig.CreateDefaults();

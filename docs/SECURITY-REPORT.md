@@ -1,6 +1,6 @@
-# Security assessment — PC Monitor USB 2.1.1
+# Security assessment — PC Monitor USB 2.2.0
 
-Assessment date: August 11, 2026.
+Assessment date: August 13, 2026.
 
 ## Outcome
 
@@ -10,6 +10,8 @@ The tested build has no public network listener and no remotely supplied arbitra
 2. **Elevated startup referenced a user-writable portable EXE.** A malicious process already running as the same user could replace that file and wait for the elevated logon task. Automatic startup now copies the EXE and APK to a protected Program Files directory and points the elevated task there.
 
 The existing scheduled task on the test PC was inspected but not modified during the assessment. Running 2.1.1 with automatic startup already enabled migrates its target to the protected location; enabling the option later performs the same protected installation after confirmation.
+
+Version 2.2.0 adds Wake-on-LAN without creating a network listener. The authenticated server calculates the subnet broadcast from a real, active, physical Ethernet adapter. Android stores that validated configuration privately, accepts exactly six MAC bytes, rejects loopback/multicast/unspecified destinations, requires IPv4, and fixes the destination port to UDP 9.
 
 ## Tests performed
 
@@ -36,6 +38,14 @@ The existing scheduled task on the test PC was inspected but not modified during
 
 The allowlist rejected examples containing PowerShell, CMD arguments, path traversal, direct action names, command separators, oversized IDs, and disabled custom-button IDs. The Android request contains only a command ID. Program paths, URLs, and hotkeys cannot be supplied through the API.
 
+### Wake-on-LAN boundary
+
+- Broadcast calculation was tested for `/24` and `/16` IPv4 networks.
+- The API exposes the Wake-on-LAN target only after token authentication.
+- The destination is derived on Windows; the Android control screen has no editable address, MAC, or port field.
+- The sender emits a standard 102-byte magic packet and opens no inbound socket.
+- No router port forwarding, UPnP, internet endpoint, cloud relay, or arbitrary UDP payload was added.
+
 ### Dependencies and repository
 
 - `dotnet list package --vulnerable --include-transitive`: no known vulnerable NuGet packages reported.
@@ -48,7 +58,7 @@ The allowlist rejected examples containing PowerShell, CMD arguments, path trave
 ## Residual considerations
 
 - The Windows EXE is not Authenticode-signed because no commercial code-signing certificate is configured. Download it only from the private GitHub release and verify the published SHA-256 hash.
-- The current private-preview APK is signed and passes Android v1/v2/v3 verification, but a dedicated long-term release key should be protected before public distribution.
+- The current APK is signed and passes Android v1/v2/v3 verification, but the project still uses its existing Android debug certificate for upgrade compatibility. A protected long-term release key is recommended before broader distribution.
 - A process that already has administrator access can control or replace other administrator-level software; this is outside the application's security boundary.
 - Physical USB debugging must remain trusted. Revoke old debugging authorizations from Android Developer options if the PC or phone changes owner.
-- No test can guarantee that compromise is impossible; the results apply to the reviewed source and generated 2.1.1 artifacts.
+- No test can guarantee that compromise is impossible; the results apply to the reviewed source and generated 2.2.0 artifacts.
