@@ -1,4 +1,4 @@
-# PC Monitor USB 2.3.1
+# PC Monitor USB 2.3.2
 
 [Português (Brasil)](README.pt-BR.md)
 
@@ -53,6 +53,7 @@ On systems where CPU temperature, clock, or power needs lower-level access, **Ex
 - When FPS is enabled, `FPS --` stays visible until a foreground game produces real frame events; it then updates with the measured value.
 - When Wake-on-LAN is enabled, a disconnected panel switches to a dedicated **Power on PC** screen. The phone stores only the validated PC name, Ethernet MAC address, and subnet broadcast received through the authenticated USB API.
 - The Wake-on-LAN screen keeps the Android display on continuously so the power button remains immediately available.
+- The header shows a real-time clock synchronized with the Android system time and its selected 12/24-hour format. It keeps working without the PC, USB, Wi-Fi, or internet.
 
 ## Real game FPS
 
@@ -106,7 +107,7 @@ Exact sensor availability depends on the motherboard, GPU, firmware, and driver.
 Windows requires the .NET 8 SDK:
 
 ```powershell
-dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.3.1
+dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.3.2
 ```
 
 Android requires JDK 17, Gradle 8.2.1, and Android SDK 34. Run `assembleRelease`, then align and sign the APK.

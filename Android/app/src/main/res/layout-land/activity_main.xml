@@ -8,6 +8,7 @@
     <LinearLayout android:layout_width="match_parent" android:layout_height="38dp" android:gravity="center_vertical" android:orientation="horizontal">
         <ImageView android:layout_width="31dp" android:layout_height="31dp" android:layout_marginEnd="8dp" android:contentDescription="PC Monitor USB" android:src="@mipmap/ic_launcher" />
         <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center_vertical" android:text="@string/app_header_landscape" android:textColor="@color/text_primary" android:textSize="16sp" android:textStyle="bold" />
+        <TextView android:id="@+id/clock_value" android:layout_width="wrap_content" android:layout_height="match_parent" android:layout_marginEnd="14dp" android:fontFamily="monospace" android:gravity="center" android:maxLines="1" android:text="00:00:00" android:textColor="@color/text_primary" android:textSize="15sp" android:textStyle="bold" />
         <TextView android:id="@+id/connection_status" android:layout_width="wrap_content" android:layout_height="match_parent" android:gravity="center" android:text="● USB" android:textColor="@color/normal" android:textSize="12sp" android:textStyle="bold" />
         <Button android:id="@+id/menu_button" android:layout_width="38dp" android:layout_height="38dp" android:background="@android:color/transparent" android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp" android:text="⋮" android:textColor="@color/text_primary" android:textSize="22sp" />
     </LinearLayout>

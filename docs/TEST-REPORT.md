@@ -1,4 +1,4 @@
-# Test report — PC Monitor USB 2.3.1
+# Test report — PC Monitor USB 2.3.2
 
 Validated locally on August 13, 2026.
 
@@ -58,7 +58,9 @@ Command:
 
 Result: **BUILD SUCCESSFUL**.
 
-Checks included English default resources, Brazilian Portuguese resources, an always-visible FPS placeholder when enabled, dedicated Wake-on-LAN views in portrait and landscape, continuous keep-screen-on behavior for the power screen, Wi-Fi-bound Wake-on-LAN transport, Java compilation, R8 optimization, resource shrinking, and release lint. The APK was installed as an in-place update on the real `SM-J410G`; Android reported version `2.3.1` / code `10`, and the app reconnected to the USB panel.
+Checks included English default resources, Brazilian Portuguese resources, an always-visible FPS placeholder when enabled, dedicated Wake-on-LAN views in portrait and landscape, continuous keep-screen-on behavior for the power screen, Wi-Fi-bound Wake-on-LAN transport, the once-per-second system clock in both orientations, Java compilation, R8 optimization, resource shrinking, and release lint. The APK was installed as an in-place update on the real `SM-J410G`; Android reported version `2.3.2` / code `11`, and the app reconnected to the USB panel.
+
+UI automation compared the rendered clock with the Android system clock after each layout settled. Portrait matched exactly at `12:10:40`, landscape matched exactly at `12:10:46`, and a separate two-second sample confirmed that the displayed seconds advanced. The clock remained fully inside the header in both 720x1480 and 1480x720 screenshots, with the original automatic-rotation setting restored after the test.
 
 The real phone configuration was inspected without clearing application data and matched the real PC: computer `SERGIO`, Ethernet MAC `FC:9D:05:69:F7:A3`, broadcast `192.168.0.255`, and port 9. With the USB HTTP reverse deliberately redirected to an unavailable local port, UI automation opened the disconnected power screen and tapped the real **LIGAR COMPUTADOR** button. Android then logged 24 successfully submitted magic packets over the active Wi-Fi network. This validates the phone-side path without shutting down or interrupting the PC.
 

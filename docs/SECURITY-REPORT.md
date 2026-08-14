@@ -1,4 +1,4 @@
-# Security assessment — PC Monitor USB 2.3.1
+# Security assessment — PC Monitor USB 2.3.2
 
 Assessment date: August 13, 2026.
 
@@ -16,6 +16,8 @@ Version 2.2.0 adds Wake-on-LAN without creating a network listener. The authenti
 Version 2.3.0 adds a real FPS source using the official standalone PresentMon 2.5.1 console binary. The component is embedded in the signed build, extracted only under the application's LocalAppData directory, and checked against the official SHA-256 before it can run. Its arguments are constant, it writes frame CSV data only to a private redirected pipe, creates no capture files, accepts no Android-supplied process/path/argument, and runs below normal priority.
 
 Version 2.3.1 hardens Wake-on-LAN reliability without adding any inbound listener. The APK binds the datagram socket to the active Wi-Fi network when Android supports it, derives the current Wi-Fi subnet broadcast locally, and transmits only the fixed standard Wake-on-LAN payload to the authenticated server-provided target MAC. Destinations are limited to the validated configured broadcast, the locally derived Wi-Fi broadcast, and the IPv4 limited broadcast; ports are internally fixed to UDP 9 and 7. No destination, port, payload, or command can be supplied by an Android command request.
+
+Version 2.3.2 adds a display-only clock sourced from the Android system time. It introduces no permission, network request, external time service, command, or stored personal data. The once-per-second UI callback is removed whenever the Activity is paused or destroyed.
 
 ## Tests performed
 
@@ -74,4 +76,4 @@ The allowlist rejected examples containing PowerShell, CMD arguments, path trave
 - The current APK is signed and passes Android v1/v2/v3 verification, but the project still uses its existing Android debug certificate for upgrade compatibility. A protected long-term release key is recommended before broader distribution.
 - A process that already has administrator access can control or replace other administrator-level software; this is outside the application's security boundary.
 - Physical USB debugging must remain trusted. Revoke old debugging authorizations from Android Developer options if the PC or phone changes owner.
-- No test can guarantee that compromise is impossible; the results apply to the reviewed source and generated 2.3.1 artifacts.
+- No test can guarantee that compromise is impossible; the results apply to the reviewed source and generated 2.3.2 artifacts.

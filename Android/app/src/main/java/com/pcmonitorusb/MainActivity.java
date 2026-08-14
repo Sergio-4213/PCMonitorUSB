@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -57,7 +58,9 @@ public final class MainActivity extends Activity {
     private volatile long lastSuccess;
     private boolean controlMode;
     private boolean protectionEnabled;
+    private boolean clockRunning;
     private String appliedLanguage = "";
+    private String clockPattern = "HH:mm:ss";
     private View root;
     private View monitorContent;
     private View controlPanel;
@@ -74,6 +77,7 @@ public final class MainActivity extends Activity {
     private View fpsGroup;
     private GridLayout buttonGrid;
     private TextView connectionStatus;
+    private TextView clockValue;
     private TextView message;
     private TextView cpuName;
     private TextView cpuTemp;
@@ -162,6 +166,16 @@ public final class MainActivity extends Activity {
         }
     };
 
+    private final Runnable clockTask = new Runnable() {
+        @Override public void run() {
+            if (destroyed || !clockRunning) return;
+            updateClock();
+            long now = System.currentTimeMillis();
+            long delay = 1000 - now % 1000;
+            ui.postDelayed(this, Math.max(100, delay));
+        }
+    };
+
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         worker.setRemoveOnCancelPolicy(true);
@@ -171,6 +185,20 @@ public final class MainActivity extends Activity {
         enterImmersiveMode();
         ui.postDelayed(protectionTask, PROTECTION_INTERVAL_MS);
         worker.execute(pollTask);
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        clockPattern = DateFormat.is24HourFormat(this) ? "HH:mm:ss" : "hh:mm:ss a";
+        clockRunning = true;
+        ui.removeCallbacks(clockTask);
+        ui.post(clockTask);
+    }
+
+    @Override protected void onPause() {
+        clockRunning = false;
+        ui.removeCallbacks(clockTask);
+        super.onPause();
     }
 
     @Override protected void onNewIntent(Intent intent) {
@@ -225,6 +253,7 @@ public final class MainActivity extends Activity {
         diskGroup = findViewById(R.id.disk_group);
         fpsGroup = findViewById(R.id.fps_group);
         buttonGrid = findViewById(R.id.button_grid);
+        clockValue = findViewById(R.id.clock_value);
         connectionStatus = findViewById(R.id.connection_status);
         message = findViewById(R.id.message);
         cpuName = findViewById(R.id.cpu_name);
@@ -260,6 +289,7 @@ public final class MainActivity extends Activity {
         wakeButton = findViewById(R.id.wake_button);
         wakeComputer = findViewById(R.id.wake_computer);
         wakeStatus = findViewById(R.id.wake_status);
+        updateClock();
         modeMonitor.setOnClickListener(v -> { controlMode = false; applyMode(); });
         modeControl.setOnClickListener(v -> { controlMode = true; applyMode(); });
         wakeButton.setOnClickListener(this::sendWakeOnLan);
@@ -609,6 +639,11 @@ public final class MainActivity extends Activity {
         WindowManager.LayoutParams params = getWindow().getAttributes();
         params.screenBrightness = value;
         getWindow().setAttributes(params);
+    }
+
+    private void updateClock() {
+        if (clockValue == null) return;
+        setText(clockValue, DateFormat.format(clockPattern, System.currentTimeMillis()).toString());
     }
 
     @SuppressWarnings("deprecation")
