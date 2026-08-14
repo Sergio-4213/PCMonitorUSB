@@ -1,4 +1,4 @@
-# Security assessment — PC Monitor USB 2.2.0
+# Security assessment — PC Monitor USB 2.3.0
 
 Assessment date: August 13, 2026.
 
@@ -12,6 +12,8 @@ The tested build has no public network listener and no remotely supplied arbitra
 The existing scheduled task on the test PC was inspected but not modified during the assessment. Running 2.1.1 with automatic startup already enabled migrates its target to the protected location; enabling the option later performs the same protected installation after confirmation.
 
 Version 2.2.0 adds Wake-on-LAN without creating a network listener. The authenticated server calculates the subnet broadcast from a real, active, physical Ethernet adapter. Android stores that validated configuration privately, accepts exactly six MAC bytes, rejects loopback/multicast/unspecified destinations, requires IPv4, and fixes the destination port to UDP 9.
+
+Version 2.3.0 adds a real FPS source using the official standalone PresentMon 2.5.1 console binary. The component is embedded in the signed build, extracted only under the application's LocalAppData directory, and checked against the official SHA-256 before it can run. Its arguments are constant, it writes frame CSV data only to a private redirected pipe, creates no capture files, accepts no Android-supplied process/path/argument, and runs below normal priority.
 
 ## Tests performed
 
@@ -46,6 +48,15 @@ The allowlist rejected examples containing PowerShell, CMD arguments, path trave
 - The sender emits a standard 102-byte magic packet and opens no inbound socket.
 - No router port forwarding, UPnP, internet endpoint, cloud relay, or arbitrary UDP payload was added.
 
+### FPS/PresentMon boundary
+
+- Embedded binary SHA-256: `9BEC3083069F58F911E6A512F4806DB51A27BD096103087BC1D05EF54C80A191`, matching the official PresentMon 2.5.1 release asset.
+- Extraction hash is verified before every replacement and an invalid temporary file is deleted.
+- Command-line arguments and ETW session name are constants in the Windows application.
+- FPS is calculated only from recent valid `MsBetweenPresents` samples for the foreground process and busiest swap chain; invalid, stale, missing, or implausible values become `null`/`--`.
+- PresentMon runs as a hidden child process with below-normal priority and no output file; it is terminated with the Windows application.
+- No DLL injection, game memory access, remote endpoint, inbound port, or arbitrary process selector was added.
+
 ### Dependencies and repository
 
 - `dotnet list package --vulnerable --include-transitive`: no known vulnerable NuGet packages reported.
@@ -61,4 +72,4 @@ The allowlist rejected examples containing PowerShell, CMD arguments, path trave
 - The current APK is signed and passes Android v1/v2/v3 verification, but the project still uses its existing Android debug certificate for upgrade compatibility. A protected long-term release key is recommended before broader distribution.
 - A process that already has administrator access can control or replace other administrator-level software; this is outside the application's security boundary.
 - Physical USB debugging must remain trusted. Revoke old debugging authorizations from Android Developer options if the PC or phone changes owner.
-- No test can guarantee that compromise is impossible; the results apply to the reviewed source and generated 2.2.0 artifacts.
+- No test can guarantee that compromise is impossible; the results apply to the reviewed source and generated 2.3.0 artifacts.

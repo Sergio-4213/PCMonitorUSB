@@ -100,6 +100,7 @@ public final class MainActivity extends Activity {
     private TextView controlGpuDetails;
     private TextView controlRamValue;
     private TextView controlVramValue;
+    private TextView controlFpsValue;
     private Button modeMonitor;
     private Button modeControl;
     private Button wakeButton;
@@ -251,6 +252,7 @@ public final class MainActivity extends Activity {
         controlGpuDetails = findViewById(R.id.control_gpu_details);
         controlRamValue = findViewById(R.id.control_ram_value);
         controlVramValue = findViewById(R.id.control_vram_value);
+        controlFpsValue = findViewById(R.id.control_fps_value);
         modeMonitor = findViewById(R.id.mode_monitor);
         modeControl = findViewById(R.id.mode_control);
         wakeButton = findViewById(R.id.wake_button);
@@ -304,7 +306,8 @@ public final class MainActivity extends Activity {
         vramValue.setVisibility(config.showVram ? View.VISIBLE : View.GONE);
         networkGroup.setVisibility(config.showNetwork ? View.VISIBLE : View.GONE);
         diskGroup.setVisibility(config.showDisk ? View.VISIBLE : View.GONE);
-        fpsGroup.setVisibility(config.showFps && lastStats != null && !Double.isNaN(lastStats.fps) ? View.VISIBLE : View.GONE);
+        fpsGroup.setVisibility(config.showFps ? View.VISIBLE : View.GONE);
+        controlFpsValue.setVisibility(config.showFps ? View.VISIBLE : View.GONE);
         applyButtons(config);
     }
 
@@ -474,9 +477,10 @@ public final class MainActivity extends Activity {
         setText(controlGpuDetails, format(stats.gpu.clock, "%.0f MHz") + "  •  " + format(stats.gpu.power, "%.0f W"));
         setText(controlRamValue, "RAM  " + formatPair(stats.ram.used, stats.ram.total));
         setText(controlVramValue, "VRAM  " + formatPair(stats.gpu.vramUsed, stats.gpu.vramTotal));
+        setText(controlFpsValue, "FPS  " + format(stats.fps, "%.0f"));
         controlCpuValue.setTextColor(temperatureColor(stats.cpu.temperature, config.cpuElevated, config.cpuCritical));
         controlGpuValue.setTextColor(temperatureColor(stats.gpu.temperature, config.gpuElevated, config.gpuCritical));
-        fpsGroup.setVisibility(config.showFps && !Double.isNaN(stats.fps) ? View.VISIBLE : View.GONE);
+        fpsGroup.setVisibility(config.showFps ? View.VISIBLE : View.GONE);
     }
 
     private void showConnected() {
@@ -514,13 +518,14 @@ public final class MainActivity extends Activity {
             wakeButton.setAlpha(config.wakeOnLanAvailable ? 1f : 0.4f);
             if (openingWakeScreen) setText(wakeStatus, config.wakeOnLanAvailable
                     ? getString(R.string.wake_instructions) : getString(R.string.wake_unavailable));
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         } else {
             boolean returningFromWakeScreen = wakePanel.getVisibility() == View.VISIBLE;
             wakePanel.setVisibility(View.GONE);
             modeBar.setVisibility(View.VISIBLE);
             if (returningFromWakeScreen) applyMode();
         }
-        if (lastSuccess == 0 || SystemClock.elapsedRealtime() - lastSuccess > 30000)
+        if (!config.wakeOnLanEnabled && (lastSuccess == 0 || SystemClock.elapsedRealtime() - lastSuccess > 30000))
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
@@ -565,6 +570,7 @@ public final class MainActivity extends Activity {
         setText(controlCpuValue, "--°C  •  --%"); setText(controlGpuValue, "--°C  •  --%");
         setText(controlCpuDetails, "-- GHz  •  -- W"); setText(controlGpuDetails, "-- MHz  •  -- W");
         setText(controlRamValue, "RAM  -- / -- GB"); setText(controlVramValue, "VRAM  -- / -- GB");
+        setText(controlFpsValue, "FPS  --");
     }
 
     private void showTemporaryMessage(String text) {
