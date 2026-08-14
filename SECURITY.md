@@ -4,7 +4,7 @@ PC Monitor USB is designed for local USB operation. It does not expose a public 
 
 ## Supported version
 
-Security fixes are applied to the newest release. Version 2.3.1 is the current supported version; 2.1.1 introduced authentication on every API endpoint and protected elevated startup.
+Security fixes are applied to the newest release. Version 2.3.2 is the current supported version; 2.1.1 introduced authentication on every API endpoint and protected elevated startup.
 
 ## Security boundaries
 
