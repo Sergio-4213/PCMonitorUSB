@@ -1,4 +1,4 @@
-# Test report — PC Monitor USB 2.3.0
+# Test report — PC Monitor USB 2.3.1
 
 Validated locally on August 13, 2026.
 
@@ -19,7 +19,7 @@ Covered scenarios:
 - sensor selection by hardware/type/name/identifier priority;
 - stable primary-GPU selection without mixing integrated and discrete sensors;
 - configuration normalization, including invalid-language fallback;
-- Wake-on-LAN IPv4 broadcast calculation for `/24` and `/16`, authenticated configuration publication, and fixed UDP port 9;
+- Wake-on-LAN IPv4 broadcast calculation for `/24` and `/16`, authenticated configuration publication, and validated fixed server port 9;
 - PresentMon frame-time conversion, quoted CSV parsing, end-to-end CSV pipeline, embedded-resource extraction, official SHA-256 verification, and executable/version validation;
 - Portuguese/English localization and built-in button labels;
 - protected elevated-startup destination validation;
@@ -37,7 +37,7 @@ Real-machine snapshot during this run:
 - GPU: `AMD Radeon RX 7600`;
 - sensors enumerated: 134;
 - detected Wake-on-LAN adapter: `Ethernet 4` / Realtek PCIe GbE;
-- detected local broadcast: `192.168.0.255`, UDP port 9;
+- detected local broadcast: `192.168.0.255`, configured UDP port 9;
 - Windows reports the Ethernet adapter armed for wake and its driver reports Magic Packet and shutdown Wake-on-LAN enabled;
 - PresentMon 2.5.1 embedded binary extracted and executed in version/help mode; official SHA-256 prefix `9BEC3083069F…` verified;
 - live Android panel CPU temperature: 67 °C;
@@ -58,7 +58,9 @@ Command:
 
 Result: **BUILD SUCCESSFUL**.
 
-Checks included English default resources, Brazilian Portuguese resources, an always-visible FPS placeholder when enabled, dedicated Wake-on-LAN views in portrait and landscape, continuous keep-screen-on behavior for the power screen, Java compilation, R8 optimization, resource shrinking, and release lint. The signed APK was installed as an in-place update on the real `SM-J410G`; Android reported version `2.3.0` / code `9`, and the app reconnected to the USB panel.
+Checks included English default resources, Brazilian Portuguese resources, an always-visible FPS placeholder when enabled, dedicated Wake-on-LAN views in portrait and landscape, continuous keep-screen-on behavior for the power screen, Wi-Fi-bound Wake-on-LAN transport, Java compilation, R8 optimization, resource shrinking, and release lint. The APK was installed as an in-place update on the real `SM-J410G`; Android reported version `2.3.1` / code `10`, and the app reconnected to the USB panel.
+
+The real phone configuration was inspected without clearing application data and matched the real PC: computer `SERGIO`, Ethernet MAC `FC:9D:05:69:F7:A3`, broadcast `192.168.0.255`, and port 9. With the USB HTTP reverse deliberately redirected to an unavailable local port, UI automation opened the disconnected power screen and tapped the real **LIGAR COMPUTADOR** button. Android then logged 24 successfully submitted magic packets over the active Wi-Fi network. This validates the phone-side path without shutting down or interrupting the PC.
 
 ## Verification limits
 

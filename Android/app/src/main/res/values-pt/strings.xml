@@ -29,7 +29,7 @@
     <string name="turn_pc_on">LIGAR COMPUTADOR</string>
     <string name="wake_instructions">Conecte este celular ao Wi-Fi do mesmo roteador e toque no botão.</string>
     <string name="wake_sending">Enviando sinal para ligar…</string>
-    <string name="wake_sent">Sinal enviado. Aguardando o computador iniciar…</string>
+    <string name="wake_sent">Sinal reforçado enviado. Se não ligar, ative “Resume By PCI-E Device” e desative “ErP Ready” na BIOS MSI.</string>
     <string name="wake_failed">Não foi possível enviar o sinal para ligar.</string>
     <string name="wake_wifi_required">Conecte este celular ao Wi-Fi do roteador do computador.</string>
     <string name="wake_unavailable">Conecte o PC ao roteador por cabo Ethernet e abra o painel uma vez para configurar o Wake-on-LAN.</string>

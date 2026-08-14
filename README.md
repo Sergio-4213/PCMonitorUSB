@@ -1,4 +1,4 @@
-# PC Monitor USB 2.3.0
+# PC Monitor USB 2.3.1
 
 [Português (Brasil)](README.pt-BR.md)
 
@@ -51,7 +51,7 @@ On systems where CPU temperature, clock, or power needs lower-level access, **Ex
 - The `⋮` menu controls activity-only brightness and optional screen protection.
 - If communication is lost, stale values are replaced with `--` and visually dimmed.
 - When FPS is enabled, `FPS --` stays visible until a foreground game produces real frame events; it then updates with the measured value.
-- When Wake-on-LAN is enabled, a disconnected panel switches to a dedicated **Power on PC** screen. The phone stores only the validated PC name, Ethernet MAC address, subnet broadcast, and fixed UDP port 9 received through the authenticated USB API.
+- When Wake-on-LAN is enabled, a disconnected panel switches to a dedicated **Power on PC** screen. The phone stores only the validated PC name, Ethernet MAC address, and subnet broadcast received through the authenticated USB API.
 - The Wake-on-LAN screen keeps the Android display on continuously so the power button remains immediately available.
 
 ## Real game FPS
@@ -70,7 +70,9 @@ Wake-on-LAN is optional and is used only while the PC is off; normal monitoring 
 4. Enable **Start with Windows** so the server, ADB reverse, and Android panel reconnect automatically after the PC boots.
 5. Connect the phone once while the server is running. The authenticated configuration is stored privately by the APK.
 
-When the USB connection disappears, open or keep the Android app on screen and tap **Power on PC**. The app sends three standard magic packets to the local subnet. It does not contact the internet, a cloud server, or a public relay. Wake-on-LAN support from a complete shutdown varies by motherboard firmware, Ethernet adapter, driver, and Windows power state; Wi-Fi-only PCs commonly cannot use this method.
+When the USB connection disappears, open or keep the Android app on screen and tap **Power on PC**. The app binds its socket to the Wi-Fi network and sends a reinforced sequence of magic packets to the configured subnet broadcast, the broadcast calculated from the current Wi-Fi network, and `255.255.255.255`, using only fixed UDP ports 9 and 7. It does not contact the internet, a cloud server, or a public relay.
+
+On the MSI B550M PRO-VDH WIFI, confirm under **Settings > Advanced > Wake Up Event Setup** that **Resume By PCI-E Device** is enabled. Under **Power Management Setup**, keep **ErP Ready** disabled so the Ethernet controller remains powered after shutdown. This PC's Windows configuration was validated with Fast Startup disabled, the Realtek adapter armed by `powercfg`, **Wake on Magic Packet**, and **Shutdown Wake-on-LAN** enabled. The app cannot safely modify firmware; confirm these BIOS settings during the next convenient restart.
 
 ## Security
 
@@ -78,7 +80,7 @@ The phone sends only allowlisted command IDs. It cannot submit arbitrary executa
 
 The HTTP server listens only on `127.0.0.1`; USB transport uses authenticated ADB reverse. Every `/api/*` endpoint requires a temporary 192-bit token that is regenerated whenever the Windows server starts. Requests have strict body-size limits, commands are rate-limited, and duplicate or invalid tokens are rejected. There is no public binding, router port forwarding, UPnP, analytics, or telemetry.
 
-Wake-on-LAN adds no listening socket. The Android app validates the server-provided MAC address, IPv4 destination, and fixed UDP port 9 before sending a standard local broadcast. It cannot choose a target through the command API.
+Wake-on-LAN adds no listening socket. The Android app validates the server-provided MAC address and IPv4 destination before sending only local broadcasts through internal fixed UDP ports 9 and 7. It cannot choose a target through the command API.
 
 The embedded PresentMon executable is pinned to version 2.5.1 and verified against the official SHA-256 `9BEC3083069F58F911E6A512F4806DB51A27BD096103087BC1D05EF54C80A191` every time extraction is required. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
@@ -104,7 +106,7 @@ Exact sensor availability depends on the motherboard, GPU, firmware, and driver.
 Windows requires the .NET 8 SDK:
 
 ```powershell
-dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.3.0
+dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.3.1
 ```
 
 Android requires JDK 17, Gradle 8.2.1, and Android SDK 34. Run `assembleRelease`, then align and sign the APK.
@@ -122,4 +124,4 @@ PCMonitorUSB/
 `-- README.pt-BR.md
 ```
 
-References: [ADB reverse](https://developer.android.com/develop/ui/views/layout/webapps/access-local-server), [Android Debug Bridge](https://developer.android.com/tools/adb), [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor), [PresentMon console documentation](https://github.com/GameTechDev/PresentMon/blob/main/README-ConsoleApplication.md), [Microsoft Wake-on-LAN behavior](https://learn.microsoft.com/en-us/troubleshoot/windows-client/setup-upgrade-and-drivers/wake-on-lan-feature), and the [MSI B550M PRO-VDH WIFI manual](https://download.msi.com/archive/mnu_exe/mb/B550MPRO-VDHWIFICEC.pdf).
+References: [ADB reverse](https://developer.android.com/develop/ui/views/layout/webapps/access-local-server), [Android Debug Bridge](https://developer.android.com/tools/adb), [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor), [PresentMon console documentation](https://github.com/GameTechDev/PresentMon/blob/main/README-ConsoleApplication.md), [Microsoft Wake-on-LAN behavior](https://learn.microsoft.com/en-us/troubleshoot/windows-client/setup-upgrade-and-drivers/wake-on-lan-feature), and the [MSI B550M PRO-VDH WIFI manual](https://download.msi.com/archive/mnu_exe/mb/B550MPRO-VDHWIFI_B550MPRO-VDHWIFI6.pdf).

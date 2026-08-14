@@ -317,7 +317,7 @@ static Task TestWindowLayout()
             var save = Descendants(form).OfType<Button>().Single(x => x.Text == "Salvar configurações");
             var serverToggle = Descendants(form).OfType<Button>().Single(x => x.Text == "Ligar servidor");
             Require(serverToggle.Enabled, "O botão para ligar o servidor não está disponível quando ele está parado.");
-            var output = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "settings-layout-2.3.0.png");
+            var output = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "settings-layout-2.3.1.png");
             Directory.CreateDirectory(Path.GetDirectoryName(output)!);
             using var bitmap = new Bitmap(form.ClientSize.Width, form.ClientSize.Height);
             form.DrawToBitmap(bitmap, form.ClientRectangle);
@@ -332,7 +332,7 @@ static Task TestWindowLayout()
 
             tabs.SelectedIndex = 0;
             Application.DoEvents();
-            var dashboardOutput = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "dashboard-server-toggle-2.3.0.png");
+            var dashboardOutput = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "dashboard-server-toggle-2.3.1.png");
             using var dashboardBitmap = new Bitmap(form.ClientSize.Width, form.ClientSize.Height);
             form.DrawToBitmap(dashboardBitmap, form.ClientRectangle);
             dashboardBitmap.Save(dashboardOutput);
