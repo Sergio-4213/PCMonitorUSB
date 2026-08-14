@@ -29,7 +29,7 @@
     <string name="turn_pc_on">POWER ON PC</string>
     <string name="wake_instructions">Connect this phone to the same Wi-Fi network, then tap the button.</string>
     <string name="wake_sending">Sending wake signal…</string>
-    <string name="wake_sent">Signal sent. Waiting for the PC to start…</string>
+    <string name="wake_sent">Reinforced signal sent. If it does not start, enable “Resume By PCI-E Device” and disable “ErP Ready” in MSI BIOS.</string>
     <string name="wake_failed">Could not send the wake signal.</string>
     <string name="wake_wifi_required">Connect this phone to the PC router over Wi-Fi.</string>
     <string name="wake_unavailable">Connect the PC to the router with Ethernet and open the panel once to configure Wake-on-LAN.</string>

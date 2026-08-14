@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -35,6 +36,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public final class MainActivity extends Activity {
+    private static final String LOG_TAG = "PCMonitorUSB";
     private static final int COLOR_NORMAL = Color.rgb(102, 217, 142);
     private static final int COLOR_ELEVATED = Color.rgb(242, 166, 64);
     private static final int COLOR_CRITICAL = Color.rgb(238, 84, 84);
@@ -412,16 +414,21 @@ public final class MainActivity extends Activity {
         wakeButton.setEnabled(false);
         wakeButton.setAlpha(0.65f);
         setText(wakeStatus, getString(R.string.wake_sending));
+        final Context applicationContext = getApplicationContext();
         worker.execute(() -> {
             try {
-                WakeOnLanSender.send(config.wakeMacAddress, config.wakeBroadcastAddress, config.wakePort);
+                int sent = WakeOnLanSender.send(applicationContext, config.wakeMacAddress,
+                        config.wakeBroadcastAddress, config.wakePort);
+                Log.i(LOG_TAG, "Wake-on-LAN: " + sent + " magic packets sent over Wi-Fi to " +
+                        config.wakeMacAddress + " / " + config.wakeBroadcastAddress);
                 ui.post(() -> {
                     if (destroyed || wakeStatus == null) return;
                     setText(wakeStatus, getString(R.string.wake_sent));
                     wakeButton.setEnabled(true);
                     wakeButton.setAlpha(1f);
                 });
-            } catch (Exception ignored) {
+            } catch (Exception exception) {
+                Log.w(LOG_TAG, "Wake-on-LAN send failed", exception);
                 ui.post(() -> {
                     if (destroyed || wakeStatus == null) return;
                     setText(wakeStatus, getString(R.string.wake_failed));

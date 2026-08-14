@@ -389,7 +389,8 @@ public sealed class MainForm : Form
             T($"RAM instalada: {profile.RamTotal:0.##} GB", $"Installed RAM: {profile.RamTotal:0.##} GB");
         var wake = WakeOnLanService.Detect(_config.Current.EnableWakeOnLan);
         _systemProfileStatus.Text += wake.Available
-            ? T($"\r\nWake-on-LAN: pronto • {wake.AdapterName} • {wake.BroadcastAddress}", $"\r\nWake-on-LAN: ready • {wake.AdapterName} • {wake.BroadcastAddress}")
+            ? T($"\r\nWake-on-LAN (Windows): pronto • {wake.AdapterName} • {wake.BroadcastAddress} • confirme Resume By PCI-E na BIOS",
+                $"\r\nWake-on-LAN (Windows): ready • {wake.AdapterName} • {wake.BroadcastAddress} • confirm Resume By PCI-E in BIOS")
             : T("\r\nWake-on-LAN: conecte este PC ao roteador por cabo Ethernet", "\r\nWake-on-LAN: connect this PC to the router with Ethernet");
         if (_config.Current.ShowFps)
             _systemProfileStatus.Text += "\r\nFPS: " + _hardware.FpsStatus;
