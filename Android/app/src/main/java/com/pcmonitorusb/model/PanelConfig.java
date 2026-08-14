@@ -17,6 +17,13 @@ public final class PanelConfig {
     public double cpuCritical = 90;
     public double gpuElevated = 75;
     public double gpuCritical = 90;
+    public boolean wakeOnLanEnabled = true;
+    public boolean wakeOnLanAvailable;
+    public String wakeComputerName = "";
+    public String wakeMacAddress = "";
+    public String wakeBroadcastAddress = "";
+    public int wakePort = 9;
+    public String wakeReason = "";
     public final List<PanelButton> buttons = new ArrayList<>();
 
     public static final class PanelButton {

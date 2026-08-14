@@ -115,7 +115,8 @@ public sealed class LocalServer : IAsyncDisposable
                 new TemperatureConfig(config.CpuElevatedTemperature, config.CpuCriticalTemperature,
                     config.GpuElevatedTemperature, config.GpuCriticalTemperature),
                 buttons,
-                AppLanguage.CurrentCode));
+                AppLanguage.CurrentCode,
+                WakeOnLanService.Detect(config.EnableWakeOnLan)));
         });
         app.MapGet("/api/ping", (HttpContext context) =>
         {
@@ -200,4 +201,5 @@ public sealed record PanelConfigResponse(
     bool ShowFps,
     TemperatureConfig Temperatures,
     IReadOnlyList<ApiButton> Buttons,
-    string Language);
+    string Language,
+    WakeOnLanInfo WakeOnLan);

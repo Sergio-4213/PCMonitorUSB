@@ -53,6 +53,7 @@ public sealed class MainForm : Form
     private CheckBox _startWindows = null!;
     private CheckBox _startMinimized = null!;
     private CheckBox _autoInstallApk = null!;
+    private CheckBox _enableWakeOnLan = null!;
     private readonly Dictionary<string, CheckBox> _visibility = new(StringComparer.OrdinalIgnoreCase);
     private NumericUpDown _cpuElevated = null!;
     private NumericUpDown _cpuCritical = null!;
@@ -310,6 +311,8 @@ public sealed class MainForm : Form
         AddSetting(root, ref row, T("Janela", "Window"), _startMinimized);
         _autoInstallApk = NewCheck(T("Instalar/atualizar o APK automaticamente ao conectar", "Install/update the APK automatically when connected"), _config.Current.AutoInstallApk);
         AddSetting(root, ref row, "Android USB", _autoInstallApk);
+        _enableWakeOnLan = NewCheck(T("Mostrar 'Ligar computador' no celular quando desconectado", "Show 'Turn computer on' on the phone while disconnected"), _config.Current.EnableWakeOnLan);
+        AddSetting(root, ref row, "Wake-on-LAN", _enableWakeOnLan);
         AddVisibilitySetting(root, ref row, "CPU", "cpu", _config.Current.ShowCpu);
         AddVisibilitySetting(root, ref row, "GPU", "gpu", _config.Current.ShowGpu);
         AddVisibilitySetting(root, ref row, "RAM", "ram", _config.Current.ShowRam);
@@ -384,6 +387,10 @@ public sealed class MainForm : Form
             T($"GPU principal: {profile.PrimaryGpu}", $"Primary GPU: {profile.PrimaryGpu}") +
             (additionalGpus.Length == 0 ? "" : T($"    •    Outras GPUs: {string.Join(", ", additionalGpus)}", $"    •    Other GPUs: {string.Join(", ", additionalGpus)}")) + "\r\n" +
             T($"RAM instalada: {profile.RamTotal:0.##} GB", $"Installed RAM: {profile.RamTotal:0.##} GB");
+        var wake = WakeOnLanService.Detect(_config.Current.EnableWakeOnLan);
+        _systemProfileStatus.Text += wake.Available
+            ? T($"\r\nWake-on-LAN: pronto • {wake.AdapterName} • {wake.BroadcastAddress}", $"\r\nWake-on-LAN: ready • {wake.AdapterName} • {wake.BroadcastAddress}")
+            : T("\r\nWake-on-LAN: conecte este PC ao roteador por cabo Ethernet", "\r\nWake-on-LAN: connect this PC to the router with Ethernet");
         _tray.Text = status.State == AdbConnectionState.Connected ? T("PC Monitor USB — conectado", "PC Monitor USB — connected") : T("PC Monitor USB — desconectado", "PC Monitor USB — disconnected");
         _trayConnectionStatus.Text = status.State == AdbConnectionState.Connected ? T("● Celular conectado", "● Phone connected") : T("● Celular desconectado", "● Phone disconnected");
         _trayConnectionStatus.ForeColor = status.State == AdbConnectionState.Connected ? Green : Muted;
@@ -556,6 +563,7 @@ public sealed class MainForm : Form
         config.StartWithWindows = _startWindows.Checked;
         config.StartMinimized = _startMinimized.Checked;
         config.AutoInstallApk = _autoInstallApk.Checked;
+        config.EnableWakeOnLan = _enableWakeOnLan.Checked;
         config.ShowCpu = _visibility["cpu"].Checked;
         config.ShowGpu = _visibility["gpu"].Checked;
         config.ShowRam = _visibility["ram"].Checked;

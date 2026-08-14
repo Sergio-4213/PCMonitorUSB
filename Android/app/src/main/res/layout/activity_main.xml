@@ -19,7 +19,7 @@
         <Button android:id="@+id/menu_button" android:layout_width="40dp" android:layout_height="42dp" android:background="@android:color/transparent" android:minWidth="0dp" android:minHeight="0dp" android:padding="0dp" android:text="⋮" android:textColor="@color/text_primary" android:textSize="24sp" />
     </LinearLayout>
 
-    <LinearLayout android:layout_width="match_parent" android:layout_height="40dp" android:orientation="horizontal">
+    <LinearLayout android:id="@+id/mode_bar" android:layout_width="match_parent" android:layout_height="40dp" android:orientation="horizontal">
         <Button android:id="@+id/mode_monitor" android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginEnd="3dp" android:layout_weight="1" android:background="@drawable/mode_selected" android:minHeight="0dp" android:text="@string/mode_monitor" android:textColor="@color/accent" android:textSize="12sp" android:textStyle="bold" />
         <Button android:id="@+id/mode_control" android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginStart="3dp" android:layout_weight="1" android:background="@drawable/mode_unselected" android:minHeight="0dp" android:text="@string/mode_control" android:textColor="@color/text_secondary" android:textSize="12sp" android:textStyle="bold" />
     </LinearLayout>
@@ -115,6 +115,13 @@
                 <Button android:id="@+id/cmd_open_steam" style="@style/PanelButton" android:text="STEAM" /><Button android:id="@+id/cmd_open_amd" style="@style/PanelButton" android:text="AMD" /><Button android:id="@+id/cmd_custom_1" style="@style/PanelButton" android:text="CUSTOM 1" /><Button android:id="@+id/cmd_custom_2" style="@style/PanelButton" android:text="CUSTOM 2" />
                 <Button android:id="@+id/cmd_custom_3" style="@style/PanelButton" android:text="CUSTOM 3" /><Button android:id="@+id/cmd_custom_4" style="@style/PanelButton" android:text="CUSTOM 4" />
             </GridLayout>
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/wake_panel" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/panel_background" android:gravity="center" android:orientation="vertical" android:padding="24dp" android:visibility="gone">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="@string/pc_offline" android:textColor="@color/text_secondary" android:textSize="13sp" android:textStyle="bold" />
+            <TextView android:id="@+id/wake_computer" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:ellipsize="end" android:gravity="center" android:maxLines="1" android:text="PC" android:textColor="@color/text_primary" android:textSize="21sp" android:textStyle="bold" />
+            <Button android:id="@+id/wake_button" android:layout_width="230dp" android:layout_height="98dp" android:layout_marginTop="28dp" android:background="@drawable/wake_button_background" android:minHeight="0dp" android:minWidth="0dp" android:text="@string/turn_pc_on" android:textColor="@color/text_primary" android:textSize="19sp" android:textStyle="bold" />
+            <TextView android:id="@+id/wake_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp" android:gravity="center" android:maxLines="3" android:text="@string/wake_instructions" android:textColor="@color/text_secondary" android:textSize="12sp" />
         </LinearLayout>
     </FrameLayout>
 </LinearLayout>

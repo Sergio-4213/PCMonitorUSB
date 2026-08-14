@@ -95,6 +95,16 @@ public final class ApiClient {
             config.gpuElevated = temperatures.optDouble("gpuElevated", 75);
             config.gpuCritical = temperatures.optDouble("gpuCritical", 90);
         }
+        JSONObject wake = root.optJSONObject("wakeOnLan");
+        if (wake != null) {
+            config.wakeOnLanEnabled = wake.optBoolean("enabled", true);
+            config.wakeOnLanAvailable = wake.optBoolean("available", false);
+            config.wakeComputerName = wake.optString("computerName", "");
+            config.wakeMacAddress = wake.optString("macAddress", "");
+            config.wakeBroadcastAddress = wake.optString("broadcastAddress", "");
+            config.wakePort = wake.optInt("port", 9);
+            config.wakeReason = wake.optString("reason", "");
+        }
         JSONArray buttons = root.optJSONArray("buttons");
         if (buttons != null) {
             for (int i = 0; i < buttons.length(); i++) {

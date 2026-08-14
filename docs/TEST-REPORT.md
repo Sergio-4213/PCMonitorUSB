@@ -1,6 +1,6 @@
-# Test report — PC Monitor USB 2.1.1
+# Test report — PC Monitor USB 2.2.0
 
-Validated locally on August 11, 2026.
+Validated locally on August 13, 2026.
 
 ## Automated Windows suite
 
@@ -10,7 +10,7 @@ Command:
 .\.tools\dotnet\dotnet.exe run --project Windows\PCMonitorServer.Tests\PCMonitorServer.Tests.csproj -c Release --no-restore
 ```
 
-Result: **11/11 passed**.
+Result: **12/12 passed**.
 
 Covered scenarios:
 
@@ -19,6 +19,7 @@ Covered scenarios:
 - sensor selection by hardware/type/name/identifier priority;
 - stable primary-GPU selection without mixing integrated and discrete sensors;
 - configuration normalization, including invalid-language fallback;
+- Wake-on-LAN IPv4 broadcast calculation for `/24` and `/16`, authenticated configuration publication, and fixed UDP port 9;
 - Portuguese/English localization and built-in button labels;
 - protected elevated-startup destination validation;
 - command allowlist rejection against injection-style payloads;
@@ -34,11 +35,14 @@ Real-machine snapshot during this run:
 - CPU: `AMD Ryzen 7 3800XT`;
 - GPU: `AMD Radeon RX 7600`;
 - sensors enumerated: 134;
-- live server CPU temperature: 63.88 °C;
-- live server CPU usage: 43.33%;
-- live server CPU clock: 4.325 GHz;
-- live server CPU package power: 68.06 W;
-- GPU temperature: 61 °C at the sampled moment.
+- detected Wake-on-LAN adapter: `Ethernet 4` / Realtek PCIe GbE;
+- detected local broadcast: `192.168.0.255`, UDP port 9;
+- Windows reports the Ethernet adapter armed for wake and its driver reports Magic Packet and shutdown Wake-on-LAN enabled;
+- live Android panel CPU temperature: 67 °C;
+- live Android panel CPU usage: 49%;
+- live Android panel CPU clock: 4.28 GHz;
+- live Android panel CPU package power: 70 W;
+- live Android panel GPU temperature: 57 °C at the sampled moment.
 
 The UI test generated screenshots in `%TEMP%\PCMonitorUSBTests` and verified that the title and Save button remained inside the application window.
 
@@ -52,8 +56,10 @@ Command:
 
 Result: **BUILD SUCCESSFUL**.
 
-Checks included English default resources, Brazilian Portuguese resources, portrait layout, landscape layout, Java compilation, R8 optimization, resource shrinking, and release lint.
+Checks included English default resources, Brazilian Portuguese resources, dedicated Wake-on-LAN views in portrait and landscape, Java compilation, R8 optimization, resource shrinking, and release lint. The signed APK was installed as an in-place update on the real `SM-J410G`; Android reported version `2.2.0` / code `8`, and the app reconnected to the USB panel.
 
 ## Verification limits
 
 Sensor availability depends on the connected PC and installed low-level driver support. The isolated test process could not read CPU temperature while the main elevated server already owned the active hardware-monitoring session; this did not represent the running application's result. A direct request to the live server confirmed valid CPU temperature, usage, clock, and package-power readings. No reboot was performed.
+
+The complete power-off/power-on cycle was deliberately not executed because the user requested no meeting interruption. The machine-side prerequisites, packet construction, target validation, real Ethernet configuration, Android installation, disconnection state logic, compilation, and reconnection path were tested. A final physical Wake-on-LAN test still depends on the motherboard firmware accepting the packet from the S5 state.

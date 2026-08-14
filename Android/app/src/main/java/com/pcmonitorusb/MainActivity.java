@@ -1,8 +1,12 @@
 package com.pcmonitorusb;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,6 +24,7 @@ import android.widget.TextView;
 import com.pcmonitorusb.model.PanelConfig;
 import com.pcmonitorusb.model.StatsSnapshot;
 import com.pcmonitorusb.network.ApiClient;
+import com.pcmonitorusb.network.WakeOnLanSender;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,6 +41,7 @@ public final class MainActivity extends Activity {
     private static final int COLOR_PRIMARY = Color.rgb(242, 243, 245);
     private static final int COLOR_SECONDARY = Color.rgb(169, 175, 184);
     private static final long PROTECTION_INTERVAL_MS = 10 * 60 * 1000L;
+    private static final String WAKE_PREFS = "wake_on_lan";
 
     private final Handler ui = new Handler(Looper.getMainLooper());
     private final ScheduledThreadPoolExecutor worker = new ScheduledThreadPoolExecutor(1);
@@ -53,6 +59,8 @@ public final class MainActivity extends Activity {
     private View root;
     private View monitorContent;
     private View controlPanel;
+    private View modeBar;
+    private View wakePanel;
     private View sensorArea;
     private View cpuCard;
     private View gpuCard;
@@ -94,6 +102,9 @@ public final class MainActivity extends Activity {
     private TextView controlVramValue;
     private Button modeMonitor;
     private Button modeControl;
+    private Button wakeButton;
+    private TextView wakeComputer;
+    private TextView wakeStatus;
 
     private final Runnable pollTask = new Runnable() {
         @Override public void run() {
@@ -105,6 +116,7 @@ public final class MainActivity extends Activity {
                 if (now - lastConfigFetch >= 10000 || lastConfigFetch == 0) {
                     freshConfig = api.fetchConfig();
                     panelConfig = freshConfig;
+                    saveWakeConfiguration(freshConfig);
                     lastConfigFetch = now;
                 }
                 lastStats = stats;
@@ -151,6 +163,7 @@ public final class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         worker.setRemoveOnCancelPolicy(true);
         applyIntent(getIntent());
+        panelConfig = loadWakeConfiguration();
         bindLayout();
         enterImmersiveMode();
         ui.postDelayed(protectionTask, PROTECTION_INTERVAL_MS);
@@ -197,6 +210,8 @@ public final class MainActivity extends Activity {
         root = findViewById(R.id.root);
         monitorContent = findViewById(R.id.monitor_content);
         controlPanel = findViewById(R.id.control_panel);
+        modeBar = findViewById(R.id.mode_bar);
+        wakePanel = findViewById(R.id.wake_panel);
         sensorArea = findViewById(R.id.sensor_area);
         cpuCard = findViewById(R.id.cpu_card);
         gpuCard = findViewById(R.id.gpu_card);
@@ -238,8 +253,12 @@ public final class MainActivity extends Activity {
         controlVramValue = findViewById(R.id.control_vram_value);
         modeMonitor = findViewById(R.id.mode_monitor);
         modeControl = findViewById(R.id.mode_control);
+        wakeButton = findViewById(R.id.wake_button);
+        wakeComputer = findViewById(R.id.wake_computer);
+        wakeStatus = findViewById(R.id.wake_status);
         modeMonitor.setOnClickListener(v -> { controlMode = false; applyMode(); });
         modeControl.setOnClickListener(v -> { controlMode = true; applyMode(); });
+        wakeButton.setOnClickListener(this::sendWakeOnLan);
         findViewById(R.id.menu_button).setOnClickListener(this::showMenu);
         bindCommandButtons();
         applyPanelConfig(panelConfig);
@@ -376,6 +395,40 @@ public final class MainActivity extends Activity {
         applyButtons(panelConfig);
     }
 
+    private void sendWakeOnLan(View view) {
+        final PanelConfig config = panelConfig;
+        if (!config.wakeOnLanAvailable) {
+            setText(wakeStatus, getString(R.string.wake_unavailable));
+            return;
+        }
+        if (!isWifiConnected()) {
+            setText(wakeStatus, getString(R.string.wake_wifi_required));
+            return;
+        }
+
+        wakeButton.setEnabled(false);
+        wakeButton.setAlpha(0.65f);
+        setText(wakeStatus, getString(R.string.wake_sending));
+        worker.execute(() -> {
+            try {
+                WakeOnLanSender.send(config.wakeMacAddress, config.wakeBroadcastAddress, config.wakePort);
+                ui.post(() -> {
+                    if (destroyed || wakeStatus == null) return;
+                    setText(wakeStatus, getString(R.string.wake_sent));
+                    wakeButton.setEnabled(true);
+                    wakeButton.setAlpha(1f);
+                });
+            } catch (Exception ignored) {
+                ui.post(() -> {
+                    if (destroyed || wakeStatus == null) return;
+                    setText(wakeStatus, getString(R.string.wake_failed));
+                    wakeButton.setEnabled(true);
+                    wakeButton.setAlpha(1f);
+                });
+            }
+        });
+    }
+
     private void sendCommand(View view) {
         final Button button = (Button) view;
         final String command = (String) button.getTag();
@@ -427,6 +480,10 @@ public final class MainActivity extends Activity {
     }
 
     private void showConnected() {
+        boolean returningFromWakeScreen = wakePanel.getVisibility() == View.VISIBLE;
+        wakePanel.setVisibility(View.GONE);
+        modeBar.setVisibility(View.VISIBLE);
+        if (returningFromWakeScreen) applyMode();
         setText(connectionStatus, "● USB");
         connectionStatus.setTextColor(COLOR_NORMAL);
         sensorArea.setAlpha(1f);
@@ -443,8 +500,60 @@ public final class MainActivity extends Activity {
         sensorArea.setAlpha(0.42f);
         controlPanel.setAlpha(0.42f);
         clearValues();
+        PanelConfig config = panelConfig;
+        if (config.wakeOnLanEnabled) {
+            boolean openingWakeScreen = wakePanel.getVisibility() != View.VISIBLE;
+            modeBar.setVisibility(View.GONE);
+            monitorContent.setVisibility(View.GONE);
+            controlPanel.setVisibility(View.GONE);
+            wakePanel.setVisibility(View.VISIBLE);
+            setText(message, "");
+            setText(wakeComputer, config.wakeComputerName.length() == 0
+                    ? getString(R.string.wake_not_configured) : config.wakeComputerName);
+            wakeButton.setEnabled(config.wakeOnLanAvailable);
+            wakeButton.setAlpha(config.wakeOnLanAvailable ? 1f : 0.4f);
+            if (openingWakeScreen) setText(wakeStatus, config.wakeOnLanAvailable
+                    ? getString(R.string.wake_instructions) : getString(R.string.wake_unavailable));
+        } else {
+            boolean returningFromWakeScreen = wakePanel.getVisibility() == View.VISIBLE;
+            wakePanel.setVisibility(View.GONE);
+            modeBar.setVisibility(View.VISIBLE);
+            if (returningFromWakeScreen) applyMode();
+        }
         if (lastSuccess == 0 || SystemClock.elapsedRealtime() - lastSuccess > 30000)
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
+    @SuppressWarnings("deprecation")
+    private boolean isWifiConnected() {
+        ConnectivityManager manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo active = manager == null ? null : manager.getActiveNetworkInfo();
+        return active != null && active.isConnected() && active.getType() == ConnectivityManager.TYPE_WIFI;
+    }
+
+    private void saveWakeConfiguration(PanelConfig config) {
+        getSharedPreferences(WAKE_PREFS, MODE_PRIVATE).edit()
+                .putBoolean("enabled", config.wakeOnLanEnabled)
+                .putBoolean("available", config.wakeOnLanAvailable)
+                .putString("computer", config.wakeComputerName)
+                .putString("mac", config.wakeMacAddress)
+                .putString("broadcast", config.wakeBroadcastAddress)
+                .putInt("port", config.wakePort)
+                .putString("reason", config.wakeReason)
+                .apply();
+    }
+
+    private PanelConfig loadWakeConfiguration() {
+        SharedPreferences preferences = getSharedPreferences(WAKE_PREFS, MODE_PRIVATE);
+        PanelConfig config = new PanelConfig();
+        config.wakeOnLanEnabled = preferences.getBoolean("enabled", true);
+        config.wakeOnLanAvailable = preferences.getBoolean("available", false);
+        config.wakeComputerName = preferences.getString("computer", "");
+        config.wakeMacAddress = preferences.getString("mac", "");
+        config.wakeBroadcastAddress = preferences.getString("broadcast", "");
+        config.wakePort = preferences.getInt("port", 9);
+        config.wakeReason = preferences.getString("reason", "");
+        return config;
     }
 
     private void clearValues() {

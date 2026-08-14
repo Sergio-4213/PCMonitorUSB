@@ -19,6 +19,7 @@ var tests = new List<(string Name, Func<Task> Run)>
     ("Seleção de sensores usa tipo, nome e prioridade", TestSensorSelection),
     ("GPU principal é escolhida sem misturar vídeo integrado e dedicado", TestPrimaryGpuSelection),
     ("Configuração normaliza porta e intervalo", TestConfigNormalization),
+    ("Wake-on-LAN calcula broadcast e publica somente configuração validada", TestWakeOnLan),
     ("Idioma alterna entre português e inglês", TestLocalization),
     ("Inicialização elevada exige pasta protegida", TestStartupSecurity),
     ("Lista de comandos nega comando arbitrário", TestCommandAllowlist),
@@ -105,6 +106,22 @@ static Task TestConfigNormalization()
     return Task.CompletedTask;
 }
 
+static Task TestWakeOnLan()
+{
+    var broadcast = WakeOnLanService.CalculateBroadcast(
+        IPAddress.Parse("192.168.15.42"), IPAddress.Parse("255.255.255.0"));
+    Require(broadcast.Equals(IPAddress.Parse("192.168.15.255")), "Broadcast /24 incorreto.");
+
+    var broadcast16 = WakeOnLanService.CalculateBroadcast(
+        IPAddress.Parse("10.20.30.40"), IPAddress.Parse("255.255.0.0"));
+    Require(broadcast16.Equals(IPAddress.Parse("10.20.255.255")), "Broadcast /16 incorreto.");
+    var detected = WakeOnLanService.Detect(true);
+    Console.WriteLine(detected.Available
+        ? $"      Adaptador={detected.AdapterName}; Broadcast={detected.BroadcastAddress}; Porta={detected.Port}"
+        : $"      Wake-on-LAN indisponível neste ambiente: {detected.Reason}");
+    return Task.CompletedTask;
+}
+
 static Task TestLocalization()
 {
     AppLanguage.Configure("en");
@@ -183,6 +200,10 @@ static async Task TestLocalApi()
     Require(system?.Cpu == "AMD Ryzen 7 3800XT", "Configuração exata do PC não foi publicada.");
     var panelConfig = await client.GetFromJsonAsync<JsonElement>("/api/config");
     Require(panelConfig.GetProperty("language").GetString() == "pt", "A API não publicou o idioma selecionado para o Android.");
+    var wake = panelConfig.GetProperty("wakeOnLan");
+    Require(wake.GetProperty("computerName").GetString() == Environment.MachineName,
+        "A configuração Wake-on-LAN não identificou o computador real.");
+    Require(wake.GetProperty("port").GetInt32() == 9, "A porta Wake-on-LAN não foi limitada ao valor seguro.");
 
     using var duplicateTokenRequest = new HttpRequestMessage(HttpMethod.Get, "/api/stats");
     duplicateTokenRequest.Headers.TryAddWithoutValidation("X-PCMonitor-Token", new[] { server.ApiToken, server.ApiToken });
@@ -248,7 +269,7 @@ static Task TestWindowLayout()
             var save = Descendants(form).OfType<Button>().Single(x => x.Text == "Salvar configurações");
             var serverToggle = Descendants(form).OfType<Button>().Single(x => x.Text == "Ligar servidor");
             Require(serverToggle.Enabled, "O botão para ligar o servidor não está disponível quando ele está parado.");
-            var output = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "settings-layout-2.1.1.png");
+            var output = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "settings-layout-2.2.0.png");
             Directory.CreateDirectory(Path.GetDirectoryName(output)!);
             using var bitmap = new Bitmap(form.ClientSize.Width, form.ClientSize.Height);
             form.DrawToBitmap(bitmap, form.ClientRectangle);
@@ -263,7 +284,7 @@ static Task TestWindowLayout()
 
             tabs.SelectedIndex = 0;
             Application.DoEvents();
-            var dashboardOutput = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "dashboard-server-toggle-2.1.1.png");
+            var dashboardOutput = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "dashboard-server-toggle-2.2.0.png");
             using var dashboardBitmap = new Bitmap(form.ClientSize.Width, form.ClientSize.Height);
             form.DrawToBitmap(dashboardBitmap, form.ClientRectangle);
             dashboardBitmap.Save(dashboardOutput);
