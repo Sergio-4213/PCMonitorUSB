@@ -1,4 +1,4 @@
-# PC Monitor USB 2.2.0
+# PC Monitor USB 2.3.0
 
 [English](README.md)
 
@@ -9,6 +9,7 @@ O PC Monitor USB transforma um celular Android compatível em um painel leve de 
 - Temperatura, uso, clock atual e potência da CPU, quando disponibilizados pelo hardware.
 - Temperatura, hotspot, uso, clocks do núcleo e da VRAM, memória, potência e ventoinha da GPU, quando disponíveis.
 - RAM, tráfego de rede opcional e atividade do disco.
+- FPS real do jogo em primeiro plano medido pelo componente oficial PresentMon incorporado; nenhum FPS estimado ou inventado.
 - Modos Monitor e Controle separados e adaptados para as orientações vertical e horizontal.
 - Controles de mídia, volume, área de trabalho, Gerenciador de Tarefas, Steam, AMD Software e ações configuradas localmente.
 - Detecção USB, `adb reverse`, instalação/atualização do APK e abertura automática após a autorização inicial.
@@ -49,7 +50,15 @@ Em computadores nos quais a temperatura, o clock ou a potência da CPU exigem ac
 - As orientações vertical e horizontal possuem layouts próprios.
 - O menu `⋮` controla somente o brilho da tela do aplicativo e o modo opcional de proteção.
 - Se a comunicação for perdida, os valores antigos são substituídos por `--` e ficam visualmente escurecidos.
+- Com o FPS habilitado, `FPS --` permanece visível até um jogo em primeiro plano produzir frames reais; depois o valor medido é atualizado.
 - Com o Wake-on-LAN habilitado, o painel desconectado muda para uma tela exclusiva **Ligar computador**. O celular guarda apenas o nome do PC, MAC da Ethernet, broadcast da sub-rede e porta UDP fixa 9 recebidos pela API USB autenticada.
+- A tela de Wake-on-LAN mantém o display Android continuamente ligado para o botão ficar sempre disponível.
+
+## FPS real do jogo
+
+Habilite **Configurações > FPS real do jogo (PresentMon)** e feche e abra novamente o aplicativo Windows. O PC Monitor USB extrai o console oficial PresentMon 2.5.1 incorporado para `%LOCALAPPDATA%\PCMonitorUSB\presentmon`, verifica o SHA-256 fixo antes de executar e inicia uma coleta ETW oculta com prioridade abaixo do normal. O servidor seleciona somente frames recentes pertencentes ao processo dono da janela em primeiro plano e publica o FPS medido pela API USB autenticada existente.
+
+A linha permanece como `FPS --` enquanto nenhum jogo compatível estiver em primeiro plano. O PresentMon suporta caminhos comuns de apresentação DirectX, OpenGL e Vulkan, mas anticheats, jogos protegidos, acesso remoto, monitores virtuais ou modos incomuns de renderização podem limitar a medição. A coleta não injeta código no jogo e não cria uma porta de rede.
 
 ## Ligar o PC pelo celular
 
@@ -70,6 +79,8 @@ O celular envia somente IDs de comandos permitidos. Ele não pode enviar caminho
 O servidor HTTP escuta somente em `127.0.0.1`; o transporte USB usa ADB reverse autenticado. Todos os endpoints `/api/*` exigem um token temporário de 192 bits, recriado sempre que o servidor Windows é iniciado. As requisições possuem limite rígido de tamanho, os comandos têm limitação de frequência e tokens duplicados ou inválidos são rejeitados. Não há exposição pública, encaminhamento de portas no roteador, UPnP, analytics ou telemetria.
 
 O Wake-on-LAN não adiciona uma porta de entrada. O APK valida o MAC fornecido pelo servidor, o destino IPv4 e a porta UDP fixa 9 antes de enviar um broadcast local padrão. O celular não pode escolher um destino pela API de comandos.
+
+O executável PresentMon incorporado está fixado na versão 2.5.1 e é verificado pelo SHA-256 oficial `9BEC3083069F58F911E6A512F4806DB51A27BD096103087BC1D05EF54C80A191` sempre que precisa ser extraído. Consulte [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 Quando a inicialização automática é ativada, a tarefa elevada aponta para uma cópia protegida em Arquivos de Programas, e não para um EXE portátil gravável pelo usuário. Consulte [SECURITY.md](SECURITY.md) e o [relatório de testes de segurança](docs/SECURITY-REPORT.md).
 
@@ -93,9 +104,9 @@ A disponibilidade exata dos sensores depende da placa-mãe, GPU, firmware e driv
 O Windows exige o SDK do .NET 8:
 
 ```powershell
-dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.2.0
+dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.3.0
 ```
 
 O Android exige JDK 17, Gradle 8.2.1 e Android SDK 34. Execute `assembleRelease` e depois alinhe e assine o APK.
 
-Referências: [ADB reverse](https://developer.android.com/develop/ui/views/layout/webapps/access-local-server), [Android Debug Bridge](https://developer.android.com/tools/adb), [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor), [comportamento do Wake-on-LAN no Windows](https://learn.microsoft.com/en-us/troubleshoot/windows-client/setup-upgrade-and-drivers/wake-on-lan-feature) e [manual da MSI B550M PRO-VDH WIFI](https://download.msi.com/archive/mnu_exe/mb/B550MPRO-VDHWIFICEC.pdf).
+Referências: [ADB reverse](https://developer.android.com/develop/ui/views/layout/webapps/access-local-server), [Android Debug Bridge](https://developer.android.com/tools/adb), [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor), [documentação do console PresentMon](https://github.com/GameTechDev/PresentMon/blob/main/README-ConsoleApplication.md), [comportamento do Wake-on-LAN no Windows](https://learn.microsoft.com/en-us/troubleshoot/windows-client/setup-upgrade-and-drivers/wake-on-lan-feature) e [manual da MSI B550M PRO-VDH WIFI](https://download.msi.com/archive/mnu_exe/mb/B550MPRO-VDHWIFICEC.pdf).

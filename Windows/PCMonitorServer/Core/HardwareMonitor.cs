@@ -11,6 +11,7 @@ public sealed class HardwareMonitor : IStatsProvider, IDisposable
     private readonly object _gate = new();
     private readonly Computer _computer;
     private readonly int _intervalMs;
+    private readonly IFpsProvider? _fpsProvider;
     private CancellationTokenSource? _cts;
     private Task? _loop;
     private StatsSnapshot _current = StatsSnapshot.Empty;
@@ -26,9 +27,10 @@ public sealed class HardwareMonitor : IStatsProvider, IDisposable
     private ulong _lastCpuUser;
     private bool _hasCpuTimeSample;
 
-    public HardwareMonitor(int intervalMs)
+    public HardwareMonitor(int intervalMs, IFpsProvider? fpsProvider = null)
     {
         _intervalMs = Math.Clamp(intervalMs, 500, 2000);
+        _fpsProvider = fpsProvider;
         _computer = new Computer
         {
             IsCpuEnabled = true,
@@ -66,6 +68,7 @@ public sealed class HardwareMonitor : IStatsProvider, IDisposable
     {
         if (_loop is not null) return;
         _computer.Open();
+        _fpsProvider?.Start();
         _cts = new CancellationTokenSource();
         _loop = Task.Run(() => RunAsync(_cts.Token));
         SimpleLog.Info($"Coleta de sensores iniciada em {_intervalMs} ms.");
@@ -156,7 +159,7 @@ public sealed class HardwareMonitor : IStatsProvider, IDisposable
         var network = GetNetworkStats(now);
         var diskActivity = Pick(raw.Where(x => IsHardware(x, "Storage")).ToArray(), "Load", DiskActivityScore);
         var diskUsage = GetMainDiskUsage();
-        var snapshot = new StatsSnapshot(now, cpu, gpu, memory, network, new DiskStats(diskActivity, diskUsage), null);
+        var snapshot = new StatsSnapshot(now, cpu, gpu, memory, network, new DiskStats(diskActivity, diskUsage), _fpsProvider?.CurrentFps);
 
         lock (_gate)
         {
@@ -529,8 +532,11 @@ public sealed class HardwareMonitor : IStatsProvider, IDisposable
         _cts?.Cancel();
         try { _loop?.Wait(TimeSpan.FromSeconds(3)); } catch { }
         _computer.Close();
+        _fpsProvider?.Dispose();
         _cts?.Dispose();
     }
+
+    public string FpsStatus => _fpsProvider?.Status ?? T("Desativado", "Disabled");
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
     private sealed class MemoryStatusEx

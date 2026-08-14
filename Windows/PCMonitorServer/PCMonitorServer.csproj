@@ -7,9 +7,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>PCMonitorServer</AssemblyName>
     <RootNamespace>PCMonitorUSB</RootNamespace>
-    <Version>2.2.0</Version>
-    <AssemblyVersion>2.2.0.0</AssemblyVersion>
-    <FileVersion>2.2.0.0</FileVersion>
+    <Version>2.3.0</Version>
+    <AssemblyVersion>2.3.0.0</AssemblyVersion>
+    <FileVersion>2.3.0.0</FileVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\pc-monitor-usb.ico</ApplicationIcon>
     <PublishSingleFile>true</PublishSingleFile>
@@ -25,5 +25,6 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets\pc-monitor-usb-brand.png" LogicalName="PCMonitorUSB.Assets.pc-monitor-usb-brand.png" />
+    <EmbeddedResource Include="Assets\PresentMon\PresentMon-2.5.1-x64.exe" LogicalName="PCMonitorUSB.Assets.PresentMon.PresentMon-2.5.1-x64.exe" />
   </ItemGroup>
 </Project>

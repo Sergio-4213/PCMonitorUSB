@@ -4,7 +4,7 @@ PC Monitor USB is designed for local USB operation. It does not expose a public 
 
 ## Supported version
 
-Security fixes are applied to the newest release. Version 2.2.0 is the current supported version; 2.1.1 introduced authentication on every API endpoint and protected elevated startup.
+Security fixes are applied to the newest release. Version 2.3.0 is the current supported version; 2.1.1 introduced authentication on every API endpoint and protected elevated startup.
 
 ## Security boundaries
 
@@ -16,6 +16,7 @@ Security fixes are applied to the newest release. Version 2.2.0 is the current s
 - Android cleartext traffic is permitted only for `127.0.0.1`; app backup is disabled.
 - Elevated automatic startup uses a protected Program Files copy rather than a user-writable portable executable.
 - Wake-on-LAN opens no listening port. The APK accepts only an authenticated, server-generated Ethernet MAC/subnet broadcast pair and sends only to fixed UDP port 9 on the local network.
+- FPS capture uses the official embedded PresentMon 2.5.1 console binary. Its SHA-256 is pinned and verified before extraction/execution; it runs hidden at below-normal priority, writes no capture CSV, and adds no network listener or game injection.
 
 ## Reporting a vulnerability
 

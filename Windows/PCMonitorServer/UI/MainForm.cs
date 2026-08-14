@@ -319,7 +319,7 @@ public sealed class MainForm : Form
         AddVisibilitySetting(root, ref row, "VRAM", "vram", _config.Current.ShowVram);
         AddVisibilitySetting(root, ref row, T("Rede", "Network"), "network", _config.Current.ShowNetwork);
         AddVisibilitySetting(root, ref row, T("Disco", "Disk"), "disk", _config.Current.ShowDisk);
-        AddVisibilitySetting(root, ref row, T("FPS (somente quando houver uma fonte real)", "FPS (only when a real source is available)"), "fps", _config.Current.ShowFps);
+        AddVisibilitySetting(root, ref row, T("FPS real do jogo (PresentMon)", "Real game FPS (PresentMon)"), "fps", _config.Current.ShowFps);
         _cpuElevated = NewNumeric(30, 110, (decimal)_config.Current.CpuElevatedTemperature);
         _cpuCritical = NewNumeric(31, 120, (decimal)_config.Current.CpuCriticalTemperature);
         _gpuElevated = NewNumeric(30, 110, (decimal)_config.Current.GpuElevatedTemperature);
@@ -391,6 +391,8 @@ public sealed class MainForm : Form
         _systemProfileStatus.Text += wake.Available
             ? T($"\r\nWake-on-LAN: pronto • {wake.AdapterName} • {wake.BroadcastAddress}", $"\r\nWake-on-LAN: ready • {wake.AdapterName} • {wake.BroadcastAddress}")
             : T("\r\nWake-on-LAN: conecte este PC ao roteador por cabo Ethernet", "\r\nWake-on-LAN: connect this PC to the router with Ethernet");
+        if (_config.Current.ShowFps)
+            _systemProfileStatus.Text += "\r\nFPS: " + _hardware.FpsStatus;
         _tray.Text = status.State == AdbConnectionState.Connected ? T("PC Monitor USB — conectado", "PC Monitor USB — connected") : T("PC Monitor USB — desconectado", "PC Monitor USB — disconnected");
         _trayConnectionStatus.Text = status.State == AdbConnectionState.Connected ? T("● Celular conectado", "● Phone connected") : T("● Celular desconectado", "● Phone disconnected");
         _trayConnectionStatus.ForeColor = status.State == AdbConnectionState.Connected ? Green : Muted;
@@ -592,8 +594,8 @@ public sealed class MainForm : Form
             SetStartup(config.StartWithWindows);
             _config.Save(config);
             MessageBox.Show(T(
-                "Configurações salvas. Porta e intervalo entram em vigor após reiniciar o servidor. Para aplicar outro idioma em toda a interface, feche e abra o aplicativo.",
-                "Settings saved. Port and interval changes take effect after restarting the server. To apply another language throughout the interface, close and reopen the application."),
+                "Configurações salvas. Porta, intervalo e coleta de FPS entram em vigor após fechar e abrir o aplicativo. Para aplicar outro idioma em toda a interface, também reabra o aplicativo.",
+                "Settings saved. Port, interval, and FPS capture take effect after closing and reopening the application. Reopen the application to apply another language as well."),
                 "PC Monitor USB", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)

@@ -45,7 +45,8 @@ internal static class Program
             try { MainForm.SetStartup(true); }
             catch (Exception ex) { SimpleLog.Warn("Não foi possível migrar a inicialização automática: " + ex.Message); }
         }
-        using var hardware = new HardwareMonitor(config.Current.UpdateIntervalMs);
+        IFpsProvider? fpsProvider = config.Current.ShowFps ? new PresentMonFpsProvider(dataRoot) : null;
+        using var hardware = new HardwareMonitor(config.Current.UpdateIntervalMs, fpsProvider);
         hardware.Start();
         var commands = new CommandService(config);
         var server = new LocalServer(hardware, config, commands);

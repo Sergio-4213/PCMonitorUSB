@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.Sockets;
@@ -20,6 +21,7 @@ var tests = new List<(string Name, Func<Task> Run)>
     ("GPU principal é escolhida sem misturar vídeo integrado e dedicado", TestPrimaryGpuSelection),
     ("Configuração normaliza porta e intervalo", TestConfigNormalization),
     ("Wake-on-LAN calcula broadcast e publica somente configuração validada", TestWakeOnLan),
+    ("PresentMon calcula FPS real e valida o binário incorporado", TestPresentMonFps),
     ("Idioma alterna entre português e inglês", TestLocalization),
     ("Inicialização elevada exige pasta protegida", TestStartupSecurity),
     ("Lista de comandos nega comando arbitrário", TestCommandAllowlist),
@@ -122,6 +124,46 @@ static Task TestWakeOnLan()
     return Task.CompletedTask;
 }
 
+static async Task TestPresentMonFps()
+{
+    var fps = PresentMonFpsProvider.CalculateFps([16.666, 16.667, 16.666, 16.667]);
+    Require(fps is >= 59.9f and <= 60.1f, "Conversão de frame time para FPS está incorreta.");
+    Require(!PresentMonFpsProvider.CalculateFps([double.NaN, 0.1]).HasValue,
+        "A fonte de FPS aceitou amostras inválidas.");
+    var csv = PresentMonFpsProvider.ParseCsvLine("\"Game, Test.exe\",123,0xABC,16.667");
+    Require(csv.Count == 4 && csv[0] == "Game, Test.exe", "Parser CSV do PresentMon não preservou campo entre aspas.");
+
+    var root = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(root);
+    using var provider = new PresentMonFpsProvider(root);
+    provider.ProcessLine("Application,ProcessID,SwapChainAddress,MsBetweenPresents");
+    provider.ProcessLine("game.exe,123,0xABC,16.666");
+    provider.ProcessLine("game.exe,123,0xABC,16.667");
+    provider.ProcessLine("game.exe,123,0xABC,16.666");
+    var parsedFps = provider.GetFpsForProcess(123);
+    Require(parsedFps is >= 59.9f and <= 60.1f, "Pipeline CSV do PresentMon não produziu 60 FPS.");
+    provider.PrepareExecutable();
+    Require(File.Exists(provider.ExecutablePath), "Binário incorporado do PresentMon não foi extraído.");
+    using var stream = File.OpenRead(provider.ExecutablePath);
+    var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream));
+    Require(hash == PresentMonFpsProvider.ExpectedSha256, "SHA-256 do PresentMon extraído é diferente do oficial.");
+    var startInfo = new ProcessStartInfo(provider.ExecutablePath, "--help")
+    {
+        UseShellExecute = false,
+        CreateNoWindow = true,
+        RedirectStandardError = true,
+        RedirectStandardOutput = true
+    };
+    using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("PresentMon não abriu para validação.");
+    var outputTask = process.StandardOutput.ReadToEndAsync();
+    var errorTask = process.StandardError.ReadToEndAsync();
+    await process.WaitForExitAsync();
+    var versionOutput = (await outputTask) + (await errorTask);
+    Require(versionOutput.Contains("PresentMon " + PresentMonFpsProvider.Version, StringComparison.Ordinal),
+        "O binário incorporado não informou a versão esperada.");
+    Console.WriteLine($"      PresentMon={PresentMonFpsProvider.Version}; SHA-256={hash[..12]}…; binário executável validado");
+}
+
 static Task TestLocalization()
 {
     AppLanguage.Configure("en");
@@ -178,6 +220,9 @@ static async Task TestLocalApi()
 {
     var port = FindFreePort();
     var store = NewStore(port);
+    var apiConfig = store.Current;
+    apiConfig.ShowFps = true;
+    store.Save(apiConfig);
     var commands = new CommandService(store);
     await using var server = new LocalServer(new FakeStatsProvider(), store, commands);
     await server.StartAsync();
@@ -196,10 +241,13 @@ static async Task TestLocalApi()
     client.DefaultRequestHeaders.Add("X-PCMonitor-Token", server.ApiToken);
     var stats = await client.GetAsync("/api/stats");
     Require(stats.StatusCode == HttpStatusCode.OK, "Stats autenticado não respondeu 200.");
+    var statsJson = await stats.Content.ReadFromJsonAsync<JsonElement>();
+    Require(statsJson.GetProperty("fps").GetSingle() == 144, "A API não publicou o FPS real disponível.");
     var system = await client.GetFromJsonAsync<SystemProfile>("/api/system");
     Require(system?.Cpu == "AMD Ryzen 7 3800XT", "Configuração exata do PC não foi publicada.");
     var panelConfig = await client.GetFromJsonAsync<JsonElement>("/api/config");
     Require(panelConfig.GetProperty("language").GetString() == "pt", "A API não publicou o idioma selecionado para o Android.");
+    Require(panelConfig.GetProperty("showFps").GetBoolean(), "A API não publicou a opção de FPS habilitada.");
     var wake = panelConfig.GetProperty("wakeOnLan");
     Require(wake.GetProperty("computerName").GetString() == Environment.MachineName,
         "A configuração Wake-on-LAN não identificou o computador real.");
@@ -269,7 +317,7 @@ static Task TestWindowLayout()
             var save = Descendants(form).OfType<Button>().Single(x => x.Text == "Salvar configurações");
             var serverToggle = Descendants(form).OfType<Button>().Single(x => x.Text == "Ligar servidor");
             Require(serverToggle.Enabled, "O botão para ligar o servidor não está disponível quando ele está parado.");
-            var output = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "settings-layout-2.2.0.png");
+            var output = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "settings-layout-2.3.0.png");
             Directory.CreateDirectory(Path.GetDirectoryName(output)!);
             using var bitmap = new Bitmap(form.ClientSize.Width, form.ClientSize.Height);
             form.DrawToBitmap(bitmap, form.ClientRectangle);
@@ -284,7 +332,7 @@ static Task TestWindowLayout()
 
             tabs.SelectedIndex = 0;
             Application.DoEvents();
-            var dashboardOutput = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "dashboard-server-toggle-2.2.0.png");
+            var dashboardOutput = Path.Combine(Path.GetTempPath(), "PCMonitorUSBTests", "dashboard-server-toggle-2.3.0.png");
             using var dashboardBitmap = new Bitmap(form.ClientSize.Width, form.ClientSize.Height);
             form.DrawToBitmap(dashboardBitmap, form.ClientRectangle);
             dashboardBitmap.Save(dashboardOutput);
@@ -380,6 +428,6 @@ sealed class FakeStatsProvider : IStatsProvider
         new RamStats(14.2f, 32, 44),
         new NetworkStats(18.5f, 1.4f),
         new DiskStats(7, 55),
-        null);
+        144);
     public IReadOnlyList<RawSensor> DetectedSensors { get; } = Array.Empty<RawSensor>();
 }
