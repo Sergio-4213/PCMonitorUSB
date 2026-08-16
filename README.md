@@ -19,19 +19,15 @@ PC Monitor USB turns a compatible Android phone into a lightweight USB hardware 
 
 ## Android interface
 
-The images below were captured from the release APK running on a real Samsung Galaxy J4 Core. Sensor readings are live examples and vary by computer and workload.
+The images below were captured in landscape orientation from the release APK running on a real Samsung Galaxy J4 Core. Sensor readings are live examples and vary by computer and workload.
 
-| Monitor — portrait | Control — portrait |
-| --- | --- |
-| <img src="docs/screenshots/monitor-portrait.png" alt="Monitor mode in portrait orientation" width="320"> | <img src="docs/screenshots/control-portrait.png" alt="Control mode in portrait orientation" width="320"> |
-
-| Monitor — landscape | Control — landscape |
+| Monitor | Control |
 | --- | --- |
 | <img src="docs/screenshots/monitor-landscape.png" alt="Monitor mode in landscape orientation" width="680"> | <img src="docs/screenshots/control-landscape.png" alt="Control mode in landscape orientation" width="680"> |
 
 | Display options | Disconnected / Wake-on-LAN |
 | --- | --- |
-| <img src="docs/screenshots/display-options.png" alt="Brightness and screen-protection options" width="320"> | <img src="docs/screenshots/wake-on-lan.png" alt="Disconnected Wake-on-LAN screen" width="320"> |
+| <img src="docs/screenshots/display-options-landscape.png" alt="Brightness and screen-protection options in landscape orientation" width="680"> | <img src="docs/screenshots/wake-on-lan-landscape.png" alt="Disconnected Wake-on-LAN screen in landscape orientation" width="680"> |
 
 See the [complete Android interface gallery](docs/ANDROID-GALLERY.md) for descriptions of every screen.
 
