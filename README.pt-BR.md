@@ -17,6 +17,20 @@ O PC Monitor USB transforma um celular Android compatível em um painel leve de 
 - Interface em português do Brasil e inglês no Windows e no Android.
 - Tela local e opcional de Wake-on-LAN para ligar o PC pelo celular quando o painel USB estiver desconectado.
 
+## Interface no celular
+
+As imagens abaixo foram capturadas na orientação horizontal do APK de lançamento em execução em um Samsung Galaxy J4 Core real. Os valores dos sensores são exemplos ao vivo e variam conforme o computador e a carga de trabalho.
+
+| Monitor | Controle |
+| --- | --- |
+| <img src="docs/screenshots/monitor-landscape.png" alt="Modo Monitor na orientação horizontal" width="680"> | <img src="docs/screenshots/control-landscape.png" alt="Modo Controle na orientação horizontal" width="680"> |
+
+| Opções da tela | Desconectado / Wake-on-LAN |
+| --- | --- |
+| <img src="docs/screenshots/display-options-landscape.png" alt="Opções de brilho e proteção na orientação horizontal" width="680"> | <img src="docs/screenshots/wake-on-lan-landscape.png" alt="Tela horizontal para ligar o computador" width="680"> |
+
+Consulte a [galeria completa da interface Android](docs/ANDROID-GALLERY.md) para ver a descrição de cada tela.
+
 ## Idioma
 
 Na primeira execução, o aplicativo Windows acompanha o idioma de exibição do Windows: sistemas em português usam português; os demais usam inglês. É possível alterar essa escolha em **Configurações > Idioma**, selecionando **Automático (Windows)**, **Português** ou **English**. Feche e abra novamente o aplicativo Windows depois de mudar essa opção.

@@ -17,6 +17,20 @@ PC Monitor USB turns a compatible Android phone into a lightweight USB hardware 
 - English and Brazilian Portuguese on Windows and Android.
 - Optional local Wake-on-LAN screen for turning the PC on from the phone while the USB panel is disconnected.
 
+## Android interface
+
+The images below were captured in landscape orientation from the release APK running on a real Samsung Galaxy J4 Core. Sensor readings are live examples and vary by computer and workload.
+
+| Monitor | Control |
+| --- | --- |
+| <img src="docs/screenshots/monitor-landscape.png" alt="Monitor mode in landscape orientation" width="680"> | <img src="docs/screenshots/control-landscape.png" alt="Control mode in landscape orientation" width="680"> |
+
+| Display options | Disconnected / Wake-on-LAN |
+| --- | --- |
+| <img src="docs/screenshots/display-options-landscape.png" alt="Brightness and screen-protection options in landscape orientation" width="680"> | <img src="docs/screenshots/wake-on-lan-landscape.png" alt="Disconnected Wake-on-LAN screen in landscape orientation" width="680"> |
+
+See the [complete Android interface gallery](docs/ANDROID-GALLERY.md) for descriptions of every screen.
+
 ## Language
 
 On first run, the Windows app follows the Windows display language: Portuguese systems use Portuguese, and other systems use English. You can override this under **Settings > Language** with **Automatic (Windows)**, **Português**, or **English**. Reopen the Windows app after changing this option.
