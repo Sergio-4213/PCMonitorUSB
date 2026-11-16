@@ -1,4 +1,8 @@
-# PC Monitor USB 2.3.2
+# PC Monitor USB 2.3.3
+
+The Android panel now follows the Windows accent color automatically. Cards, headings, tabs and buttons use matching dark shades; text contrast and temperature warning colors are preserved. Changes arrive through the existing authenticated USB configuration refresh (about 10–15 seconds). The last color is retained offline and after rotation. No new permissions, network ports or dependencies are required.
+
+Windows color detection uses [DwmGetColorizationColor](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmgetcolorizationcolor). If detection is unavailable, the panel uses its original cyan accent.
 
 [Português (Brasil)](README.pt-BR.md)
 
@@ -121,7 +125,7 @@ Exact sensor availability depends on the motherboard, GPU, firmware, and driver.
 Windows requires the .NET 8 SDK:
 
 ```powershell
-dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.3.2
+dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.3.3
 ```
 
 Android requires JDK 17, Gradle 8.2.1, and Android SDK 34. Run `assembleRelease`, then align and sign the APK.

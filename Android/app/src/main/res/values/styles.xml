@@ -11,6 +11,7 @@
     </style>
 
     <style name="MetricTitle">
+        <item name="android:tag">theme_accent</item>
         <item name="android:textColor">@color/accent</item>
         <item name="android:textSize">13sp</item>
         <item name="android:textStyle">bold</item>
@@ -44,6 +45,7 @@
     </style>
 
     <style name="ControlSummaryTitle">
+        <item name="android:tag">theme_accent</item>
         <item name="android:textColor">@color/text_secondary</item>
         <item name="android:textSize">11sp</item>
         <item name="android:textStyle">bold</item>

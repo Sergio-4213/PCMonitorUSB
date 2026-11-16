@@ -5,6 +5,7 @@ import java.util.List;
 
 public final class PanelConfig {
     public String language = "";
+    public String accentColor = "#2AC7DA";
     public int updateIntervalMs = 1000;
     public boolean showCpu = true;
     public boolean showGpu = true;
