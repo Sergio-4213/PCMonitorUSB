@@ -23,6 +23,7 @@ var tests = new List<(string Name, Func<Task> Run)>
     ("Wake-on-LAN calcula broadcast e publica somente configuração validada", TestWakeOnLan),
     ("PresentMon calcula FPS real e valida o binário incorporado", TestPresentMonFps),
     ("Idioma alterna entre português e inglês", TestLocalization),
+    ("Cor do Windows preserva RGB e descarta transparência", TestWindowsAccent),
     ("Inicialização elevada exige pasta protegida", TestStartupSecurity),
     ("Lista de comandos nega comando arbitrário", TestCommandAllowlist),
     ("API local exige token em todos os endpoints e limita abuso", TestLocalApi),
@@ -48,6 +49,17 @@ foreach (var test in tests)
 
 Console.WriteLine($"RESULTADO: {tests.Count - failed}/{tests.Count} testes passaram.");
 return failed == 0 ? 0 : 1;
+
+static Task TestWindowsAccent()
+{
+    Require(WindowsAccent.ToRgbHex(0xA17835C1) == "#7835C1", "Canais RGB trocados.");
+    Require(WindowsAccent.ToRgbHex(0x00000000) == "#000000", "Preto válido perdido.");
+    Require(WindowsAccent.ToRgbHex(0xFFFFFFFF) == "#FFFFFF", "Branco válido perdido.");
+    var current = WindowsAccent.Read();
+    Require(System.Text.RegularExpressions.Regex.IsMatch(current, "^#[0-9A-F]{6}$"), "Cor inválida.");
+    Console.WriteLine($"      Windows accent={current}");
+    return Task.CompletedTask;
+}
 
 static Task TestAdbParser()
 {
@@ -246,6 +258,8 @@ static async Task TestLocalApi()
     var system = await client.GetFromJsonAsync<SystemProfile>("/api/system");
     Require(system?.Cpu == "AMD Ryzen 7 3800XT", "Configuração exata do PC não foi publicada.");
     var panelConfig = await client.GetFromJsonAsync<JsonElement>("/api/config");
+    Require(panelConfig.GetProperty("accentColor").GetString() == WindowsAccent.Read(),
+        "A API não publicou a cor de destaque real do Windows.");
     Require(panelConfig.GetProperty("language").GetString() == "pt", "A API não publicou o idioma selecionado para o Android.");
     Require(panelConfig.GetProperty("showFps").GetBoolean(), "A API não publicou a opção de FPS habilitada.");
     var wake = panelConfig.GetProperty("wakeOnLan");

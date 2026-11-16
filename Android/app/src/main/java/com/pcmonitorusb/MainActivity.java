@@ -27,6 +27,8 @@ import com.pcmonitorusb.model.PanelConfig;
 import com.pcmonitorusb.model.StatsSnapshot;
 import com.pcmonitorusb.network.ApiClient;
 import com.pcmonitorusb.network.WakeOnLanSender;
+import com.pcmonitorusb.theme.AccentPalette;
+import com.pcmonitorusb.theme.PanelTheme;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,6 +59,8 @@ public final class MainActivity extends Activity {
     private volatile long lastConfigFetch;
     private volatile long lastSuccess;
     private boolean controlMode;
+    private AccentPalette accentPalette;
+    private PanelTheme panelTheme;
     private boolean protectionEnabled;
     private boolean clockRunning;
     private String appliedLanguage = "";
@@ -238,6 +242,7 @@ public final class MainActivity extends Activity {
 
     private void bindLayout() {
         setContentView(R.layout.activity_main);
+        panelTheme = null;
         root = findViewById(R.id.root);
         monitorContent = findViewById(R.id.monitor_content);
         controlPanel = findViewById(R.id.control_panel);
@@ -330,6 +335,7 @@ public final class MainActivity extends Activity {
     }
 
     private void applyPanelConfig(PanelConfig config) {
+        applyWindowsAccent(config.accentColor);
         cpuCard.setVisibility(config.showCpu ? View.VISIBLE : View.GONE);
         gpuCard.setVisibility(config.showGpu ? View.VISIBLE : View.GONE);
         memoryCard.setVisibility(config.showRam || config.showVram || config.showNetwork || config.showDisk || config.showFps ? View.VISIBLE : View.GONE);
@@ -423,11 +429,22 @@ public final class MainActivity extends Activity {
         controlPanel.setVisibility(controlMode ? View.VISIBLE : View.GONE);
         cpuDetails.setVisibility(View.VISIBLE);
         gpuDetails.setVisibility(View.VISIBLE);
-        modeMonitor.setTextColor(controlMode ? COLOR_SECONDARY : Color.rgb(42, 199, 218));
-        modeControl.setTextColor(controlMode ? Color.rgb(42, 199, 218) : COLOR_SECONDARY);
-        modeMonitor.setBackgroundResource(controlMode ? R.drawable.mode_unselected : R.drawable.mode_selected);
-        modeControl.setBackgroundResource(controlMode ? R.drawable.mode_selected : R.drawable.mode_unselected);
+        panelTheme.tab(modeMonitor, !controlMode);
+        panelTheme.tab(modeControl, controlMode);
         applyButtons(panelConfig);
+    }
+
+    private void applyWindowsAccent(String color) {
+        String normalized = AccentPalette.normalize(color);
+        if (panelTheme != null && accentPalette.source.equals(normalized)) return;
+        accentPalette = new AccentPalette(normalized);
+        panelTheme = new PanelTheme(accentPalette, getResources().getDisplayMetrics().density);
+        root.setBackgroundColor(accentPalette.background);
+        panelTheme.apply(root);
+        for (Button button : commandButtons.values()) panelTheme.button(button, false);
+        panelTheme.button(wakeButton, true);
+        panelTheme.tab(modeMonitor, !controlMode);
+        panelTheme.tab(modeControl, controlMode);
     }
 
     private void sendWakeOnLan(View view) {
@@ -575,6 +592,7 @@ public final class MainActivity extends Activity {
 
     private void saveWakeConfiguration(PanelConfig config) {
         getSharedPreferences(WAKE_PREFS, MODE_PRIVATE).edit()
+                .putString("accent", AccentPalette.normalize(config.accentColor))
                 .putBoolean("enabled", config.wakeOnLanEnabled)
                 .putBoolean("available", config.wakeOnLanAvailable)
                 .putString("computer", config.wakeComputerName)
@@ -588,6 +606,7 @@ public final class MainActivity extends Activity {
     private PanelConfig loadWakeConfiguration() {
         SharedPreferences preferences = getSharedPreferences(WAKE_PREFS, MODE_PRIVATE);
         PanelConfig config = new PanelConfig();
+        config.accentColor = AccentPalette.normalize(preferences.getString("accent", AccentPalette.DEFAULT));
         config.wakeOnLanEnabled = preferences.getBoolean("enabled", true);
         config.wakeOnLanAvailable = preferences.getBoolean("available", false);
         config.wakeComputerName = preferences.getString("computer", "");

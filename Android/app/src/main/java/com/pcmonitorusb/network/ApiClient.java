@@ -80,6 +80,7 @@ public final class ApiClient {
         JSONObject root = new JSONObject(request("GET", "/api/config", null));
         PanelConfig config = new PanelConfig();
         config.language = root.optString("language", "");
+        config.accentColor = root.optString("accentColor", "#2AC7DA");
         config.updateIntervalMs = root.optInt("updateIntervalMs", 1000);
         config.showCpu = root.optBoolean("showCpu", true);
         config.showGpu = root.optBoolean("showGpu", true);

@@ -1,4 +1,8 @@
-# PC Monitor USB 2.3.2
+# PC Monitor USB 2.3.3
+
+O painel Android acompanha automaticamente a cor de destaque do Windows. Cartões, títulos, abas e botões usam tons escuros dessa cor, preservando a legibilidade dos textos e as cores de alerta de temperatura. As mudanças chegam pela atualização de configurações do USB autenticado (cerca de 10–15 segundos). A última cor fica salva ao desconectar e é mantida durante a rotação. Não são necessárias novas permissões, portas de rede ou bibliotecas.
+
+A detecção utiliza [DwmGetColorizationColor](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmgetcolorizationcolor). Se a leitura não estiver disponível, o painel utiliza o destaque ciano original.
 
 [English](README.md)
 
@@ -121,7 +125,7 @@ A disponibilidade exata dos sensores depende da placa-mãe, GPU, firmware e driv
 O Windows exige o SDK do .NET 8:
 
 ```powershell
-dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.3.2
+dotnet publish Windows\PCMonitorServer\PCMonitorServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o Release-v2.3.3
 ```
 
 O Android exige JDK 17, Gradle 8.2.1 e Android SDK 34. Execute `assembleRelease` e depois alinhe e assine o APK.
